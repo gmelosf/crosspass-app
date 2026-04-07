@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrossPass</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0a;--surface:#111;--surface2:#1a1a1a;--border:#222;--border2:#2a2a2a;
+  --white:#fafaf8;--gray:#888780;--gray-light:#f0efe8;
+  --purple:#534AB7;--purple-dark:#3C3489;--purple-light:#EEEDFE;
+  --teal:#1D9E75;--coral:#D85A30;--amber:#BA7517;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--white);
+  min-height:100vh;overflow-x:hidden;max-width:420px;margin:0 auto;position:relative}
+.screen{display:none;min-height:100vh;animation:fadeIn .28s ease}
+.screen.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* NAV BAR */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:420px;background:#0f0f0f;border-top:1px solid var(--border);
+  display:flex;z-index:100;padding:8px 0 env(safe-area-inset-bottom,12px)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:none;color:#444;cursor:pointer;transition:.15s;padding:4px 0}
+.nav-btn.active{color:var(--purple)}
+.nav-btn svg{width:20px;height:20px}
+.nav-btn span{font-size:10px;font-weight:500;letter-spacing:.03em}
+
+/* COMMON */
+.content{padding:1rem 1rem 90px}
+.page-title{font-family:'Bebas Neue';font-size:26px;letter-spacing:.02em;line-height:1}
+.page-sub{font-size:12px;color:var(--gray);margin-top:2px;margin-bottom:1.25rem}
+.section-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--gray);margin-bottom:.6rem;margin-top:1.25rem;display:block}
+.btn-primary{background:var(--purple);color:white;border:none;padding:15px 24px;
+  border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;width:100%;
+  transition:.15s;font-family:'DM Sans';letter-spacing:.01em}
+.btn-primary:hover{background:var(--purple-dark)}
+.btn-ghost{background:transparent;color:var(--white);border:1.5px solid var(--border2);
+  padding:15px 24px;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer;
+  width:100%;margin-top:10px;font-family:'DM Sans';transition:.15s}
+.btn-ghost:hover{border-color:var(--purple);color:var(--purple)}
+.badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:100px;letter-spacing:.04em}
+.badge-purple{background:var(--purple-light);color:var(--purple-dark)}
+.badge-teal{background:#d0f0e4;color:#085041}
+.badge-coral{background:#fce8e0;color:#712B13}
+.progress-bar{height:5px;background:var(--border);border-radius:100px;overflow:hidden;margin-top:5px}
+.progress-fill{height:100%;background:var(--purple);border-radius:100px}
+
+/* TOAST */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-70px);
+  background:var(--teal);color:white;padding:11px 18px;border-radius:10px;
+  font-size:13px;font-weight:600;z-index:999;transition:.35s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── LANDING ── */
+.hero{position:relative;height:100vh;display:flex;flex-direction:column;
+  justify-content:flex-end;padding:2rem 1.25rem;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 40%,#1e1548 0%,#0a0a0a 65%)}
+.hero-dots{position:absolute;inset:0;opacity:.05;
+  background-image:radial-gradient(circle,var(--purple) 1px,transparent 1px);
+  background-size:28px 28px}
+.hero-tag{display:inline-block;background:rgba(83,74,183,.2);border:1px solid rgba(83,74,183,.4);
+  color:var(--purple-light);font-size:10px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;padding:5px 12px;border-radius:100px;margin-bottom:1.25rem;width:fit-content}
+.hero-title{font-family:'Bebas Neue';font-size:clamp(64px,18vw,80px);line-height:.88;
+  color:var(--white);margin-bottom:1rem;position:relative;z-index:1}
+.hero-title em{color:var(--purple);font-style:normal}
+.hero-sub{font-size:14px;color:#999;line-height:1.65;max-width:300px;margin-bottom:2rem;position:relative;z-index:1}
+
+/* ── SIGNUP ── */
+.form-group{margin-bottom:.85rem}
+.form-label{font-size:11px;font-weight:600;color:var(--gray);letter-spacing:.07em;
+  text-transform:uppercase;margin-bottom:5px;display:block}
+.form-input{width:100%;background:var(--surface2);border:1.5px solid var(--border2);
+  color:var(--white);padding:12px 14px;border-radius:10px;font-size:14px;outline:none;
+  font-family:'DM Sans';transition:.15s}
+.form-input:focus{border-color:var(--purple)}
+.form-input::placeholder{color:#444}
+.plan-card{background:var(--surface);border:2px solid var(--border);border-radius:14px;
+  padding:1rem 1.1rem;cursor:pointer;transition:.15s;margin-bottom:8px}
+.plan-card.selected,.plan-card:hover{border-color:var(--purple)}
+.plan-popular{display:inline-block;background:var(--purple);color:white;font-size:9px;
+  font-weight:700;letter-spacing:.08em;padding:3px 9px;border-radius:100px;margin-bottom:6px}
+.plan-name{font-family:'Bebas Neue';font-size:18px}
+.plan-price{font-family:'Bebas Neue';font-size:30px;color:var(--purple);line-height:1.1}
+.plan-period{font-size:11px;color:var(--gray);margin-bottom:.75rem}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:5px}
+.plan-features li{font-size:12px;color:#bbb;display:flex;align-items:center;gap:7px}
+.plan-features li::before{content:"✓";color:var(--teal);font-weight:700}
+
+/* ── BOX CARD ── */
+.box-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.box-card{background:var(--surface);border-radius:14px;overflow:hidden;
+  border:1px solid var(--border);cursor:pointer;transition:.15s}
+.box-card:hover{border-color:var(--purple)}
+.box-thumb{width:100%;height:110px;display:flex;align-items:center;justify-content:center;font-size:30px}
+.box-card-body{padding:.75rem}
+.box-card-name{font-size:13px;font-weight:600;margin-bottom:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.box-card-loc{font-size:11px;color:var(--gray);margin-bottom:6px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.box-stars{font-size:11px;color:#f59e0b}
+
+/* ── SEARCH ── */
+.search-bar{background:var(--surface2);border:1.5px solid var(--border2);border-radius:10px;
+  padding:10px 13px;display:flex;align-items:center;gap:9px;margin-bottom:1rem}
+.search-bar input{background:none;border:none;color:var(--white);font-size:13px;
+  flex:1;outline:none;font-family:'DM Sans'}
+.search-bar input::placeholder{color:#444}
+.filter-row{display:flex;gap:7px;margin-bottom:1rem;overflow-x:auto;padding-bottom:3px}
+.filter-btn{background:var(--surface2);border:1.5px solid var(--border2);color:#777;
+  padding:6px 12px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;
+  white-space:nowrap;transition:.15s;font-family:'DM Sans'}
+.filter-btn.active,.filter-btn:hover{background:var(--purple);border-color:var(--purple);color:white}
+
+/* ── BOX DETAIL ── */
+.detail-header{height:180px;position:relative;display:flex;align-items:flex-end;padding:1rem}
+.detail-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,.2))}
+.detail-info{position:relative;z-index:1}
+.detail-name{font-family:'Bebas Neue';font-size:22px;line-height:1}
+.back-btn{position:absolute;top:12px;left:12px;z-index:2;background:rgba(0,0,0,.55);
+  border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.horario-btn{background:var(--surface2);border:1.5px solid var(--border2);color:var(--white);
+  padding:7px 13px;border-radius:8px;font-size:12px;cursor:pointer;font-family:'DM Sans';
+  transition:.15s}
+.horario-btn.sel{border-color:var(--purple);background:rgba(83,74,183,.15);color:var(--purple)}
+.coach-item{display:flex;align-items:center;gap:9px;padding:9px 11px;
+  background:var(--surface);border-radius:9px;border:1px solid var(--border)}
+.coach-avatar{width:30px;height:30px;border-radius:50%;background:var(--purple);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.checkin-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:420px;background:var(--surface);border-top:1px solid var(--border);
+  padding:12px 1rem 20px;z-index:50}
+.btn-checkin{background:var(--teal);color:white;border:none;padding:14px;border-radius:11px;
+  font-size:14px;font-weight:700;width:100%;cursor:pointer;font-family:'DM Sans';transition:.15s}
+.btn-checkin:disabled{background:#333;color:#555;cursor:not-allowed}
+
+/* ── PROFILE ── */
+.prof-header{background:linear-gradient(160deg,#1a1230 0%,var(--bg) 100%);
+  padding:1.5rem 1rem 1rem;text-align:center}
+.prof-avatar{width:64px;height:64px;border-radius:50%;background:var(--purple);
+  display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';
+  font-size:24px;color:white;margin:0 auto .75rem;border:3px solid #3C3489}
+.prof-plan{display:inline-flex;align-items:center;gap:5px;background:rgba(83,74,183,.25);
+  border:1px solid rgba(83,74,183,.5);color:var(--purple-light);
+  padding:4px 12px;border-radius:100px;font-size:11px;font-weight:600}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--border);border-radius:14px;overflow:hidden;margin-top:1.25rem}
+.stat-box{background:var(--surface);padding:.9rem;text-align:center}
+.stat-num{font-family:'Bebas Neue';font-size:26px;color:var(--purple)}
+.stat-lbl{font-size:9px;color:var(--gray);letter-spacing:.07em;text-transform:uppercase;margin-top:1px}
+
+/* TABS */
+.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:9px;padding:3px;margin-bottom:1rem}
+.tab{flex:1;padding:7px;border:none;background:none;color:#555;font-size:11px;
+  font-weight:600;cursor:pointer;border-radius:7px;transition:.15s;font-family:'DM Sans'}
+.tab.active{background:var(--purple);color:white}
+
+/* PR */
+.pr-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:11px 13px;display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.pr-move{font-size:13px;font-weight:600}
+.pr-date{font-size:10px;color:var(--gray);margin-top:2px}
+.pr-val{font-family:'Bebas Neue';font-size:22px;color:var(--teal)}
+
+/* ACTIVITY */
+.act-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.act-icon{width:34px;height:34px;border-radius:9px;background:rgba(83,74,183,.2);
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.act-title{font-size:12px;font-weight:500}
+.act-sub{font-size:10px;color:var(--gray);margin-top:2px}
+.act-val{font-family:'Bebas Neue';font-size:15px;color:var(--teal);margin-left:auto;flex-shrink:0}
+
+/* RANKING */
+.rank-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:10px 13px;display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.rank-pos{font-family:'Bebas Neue';font-size:18px;width:26px;text-align:center;color:var(--gray)}
+.rank-pos.gold{color:#f59e0b}
+.rank-pos.silver{color:#aaa}
+.rank-pos.bronze{color:#cd7c4f}
+.rank-name{flex:1;font-size:12px;font-weight:500}
+.rank-score{font-family:'Bebas Neue';font-size:16px;color:var(--purple)}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════ LANDING ════════════════ -->
+<div class="screen active" id="s-landing">
+  <div class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-dots"></div>
+    <div class="hero-tag">🏋️ Marketplace de CrossFit</div>
+    <h1 class="hero-title">SEU<br>TREINO<br><em>SEM</em><br>LIMITES.</h1>
+    <p class="hero-sub">Acesse centenas de boxes de CrossFit com uma assinatura. Treine onde quiser, quando quiser.</p>
+    <button class="btn-primary" onclick="go('s-signup')">Começar — R$ 300/mês</button>
+    <button class="btn-ghost" onclick="loginDemo()">Já tenho conta</button>
+  </div>
+</div>
+
+<!-- ════════════════ SIGNUP ════════════════ -->
+<div class="screen" id="s-signup">
+  <div class="content" style="padding-top:1.5rem">
+    <button onclick="go('s-landing')" style="background:none;border:none;color:var(--gray);
+      cursor:pointer;font-size:13px;font-family:'DM Sans';margin-bottom:1.25rem;display:block">← Voltar</button>
+    <p class="page-title">Criar conta</p>
+    <p class="page-sub">7 dias grátis, cancele quando quiser</p>
+
+    <div class="form-group">
+      <label class="form-label">Nome completo</label>
+      <input class="form-input" id="in-name" placeholder="Rafael Santos">
+    </div>
+    <div class="form-group">
+      <label class="form-label">E-mail</label>
+      <input class="form-input" id="in-email" type="email" placeholder="rafael@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input class="form-input" id="in-pass" type="password" placeholder="••••••••">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Cidade</label>
+      <select class="form-input" id="in-city">
+        <option value="">Selecione</option>
+        <option>São Paulo</option>
+        <option>Rio de Janeiro</option>
+        <option>Belo Horizonte</option>
+        <option>Curitiba</option>
+        <option>Porto Alegre</option>
+      </select>
+    </div>
+
+    <span class="section-label">Escolha seu plano</span>
+    <div class="plan-card" onclick="selPlan(this,'lite')">
+      <p class="plan-name">Lite</p>
+      <p class="plan-price">R$ 200</p>
+      <p class="plan-period">/mês · até 8 aulas</p>
+      <ul class="plan-features">
+        <li>Acesso a todos os boxes parceiros</li>
+        <li>Até 8 check-ins por mês</li>
+        <li>Perfil e histórico de treinos</li>
+      </ul>
+    </div>
+    <div class="plan-card selected" onclick="selPlan(this,'premium')">
+      <div class="plan-popular">MAIS POPULAR</div>
+      <p class="plan-name">Premium</p>
+      <p class="plan-price">R$ 300</p>
+      <p class="plan-period">/mês · ilimitado</p>
+      <ul class="plan-features">
+        <li>Check-ins ilimitados</li>
+        <li>Todos os boxes parceiros</li>
+        <li>Ranking nacional e PRs</li>
+        <li>Reserva com antecedência</li>
+      </ul>
+    </div>
+
+    <button class="btn-primary" style="margin-top:.75rem" onclick="doSignup()">Criar conta e assinar</button>
+    <p style="font-size:11px;color:#555;text-align:center;margin-top:10px">Cartão cobrado após 7 dias</p>
+  </div>
+</div>
+
+<!-- ════════════════ HOME ════════════════ -->
+<div class="screen" id="s-home">
+  <div class="content" style="padding-top:1.25rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <div>
+        <p style="font-size:11px;color:var(--gray)">Bom dia,</p>
+        <p class="page-title" id="h-name">Rafael</p>
+      </div>
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--purple);
+        display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';
+        font-size:16px;cursor:pointer" id="h-avatar" onclick="goNav('profile')">RS</div>
+    </div>
+
+    <div style="background:linear-gradient(135deg,var(--purple-dark),var(--purple));
+      border-radius:14px;padding:.9rem 1.1rem;margin-bottom:1.25rem;display:flex;
+      align-items:center;justify-content:space-between">
+      <div>
+        <p style="font-size:11px;opacity:.75;margin-bottom:3px">Sequência</p>
+        <p style="font-family:'Bebas Neue';font-size:28px;line-height:1">🔥 7 dias</p>
+      </div>
+      <div style="text-align:right">
+        <p style="font-size:11px;opacity:.75;margin-bottom:3px">Este mês</p>
+        <p style="font-family:'Bebas Neue';font-size:28px;line-height:1" id="h-ci">12</p>
+        <p style="font-size:10px;opacity:.7">check-ins</p>
+      </div>
+    </div>
+
+    <span class="section-label">Perto de você</span>
+    <div class="box-grid" id="h-boxes"></div>
+
+    <span class="section-label">Atividade recente</span>
+    <div id="h-activity"></div>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="goNav('home')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" onclick="goNav('search')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <span>Buscar</span>
+    </button>
+    <button class="nav-btn" onclick="goNav('profile')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <span>Perfil</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ════════════════ SEARCH ════════════════ -->
+<div class="screen" id="s-search">
+  <div class="content" style="padding-top:1.25rem">
+    <p class="page-title">Buscar Boxes</p>
+    <p class="page-sub">440 boxes em todo o Brasil</p>
+    <div class="search-bar">
+      <svg width="15" height="15" fill="none" stroke="#555" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input placeholder="Nome, bairro, cidade..." id="s-input" oninput="renderSearch()">
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setFilter(this,'todos')">Todos</button>
+      <button class="filter-btn" onclick="setFilter(this,'sp')">São Paulo</button>
+      <button class="filter-btn" onclick="setFilter(this,'rj')">Rio</button>
+      <button class="filter-btn" onclick="setFilter(this,'bh')">BH</button>
+      <button class="filter-btn" onclick="setFilter(this,'open')">Aberto agora</button>
+    </div>
+    <div class="box-grid" id="s-boxes"></div>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn" onclick="goNav('home')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn active" onclick="goNav('search')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <span>Buscar</span>
+    </button>
+    <button class="nav-btn" onclick="goNav('profile')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <span>Perfil</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ════════════════ BOX DETAIL ════════════════ -->
+<div class="screen" id="s-box">
+  <button class="back-btn" onclick="goBack()">←</button>
+  <div class="detail-header" id="d-header">
+    <div class="detail-overlay"></div>
+    <div class="detail-info">
+      <p class="detail-name" id="d-name"></p>
+      <p style="font-size:11px;color:#ccc;margin-top:3px" id="d-loc"></p>
+    </div>
+  </div>
+  <div class="content" style="padding-top:.75rem;padding-bottom:110px">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem" id="d-badges"></div>
+    <span class="section-label">Sobre o box</span>
+    <p id="d-desc" style="font-size:13px;color:#bbb;line-height:1.7;margin-bottom:1rem"></p>
+    <span class="section-label">Horários hoje</span>
+    <div id="d-horarios" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:1rem"></div>
+    <span class="section-label">Coaches</span>
+    <div id="d-coaches" style="display:flex;flex-direction:column;gap:7px"></div>
+  </div>
+  <div class="checkin-bar">
+    <button class="btn-checkin" id="ci-btn" onclick="doCheckin()">Fazer Check-in</button>
+  </div>
+</div>
+
+<!-- ════════════════ PROFILE ════════════════ -->
+<div class="screen" id="s-profile">
+  <div class="prof-header">
+    <div class="prof-avatar" id="p-avatar">RS</div>
+    <p style="font-family:'Bebas Neue';font-size:22px;margin-bottom:2px" id="p-name">Rafael Santos</p>
+    <p style="font-size:11px;color:var(--gray);margin-bottom:.75rem" id="p-city">São Paulo</p>
+    <div class="prof-plan">⚡ Premium</div>
+    <div class="stats-row">
+      <div class="stat-box"><p class="stat-num" id="p-ci">12</p><p class="stat-lbl">Check-ins</p></div>
+      <div class="stat-box"><p class="stat-num">7</p><p class="stat-lbl">Sequência</p></div>
+      <div class="stat-box"><p class="stat-num" id="p-rank">#42</p><p class="stat-lbl">Ranking SP</p></div>
+    </div>
+  </div>
+  <div class="content" style="padding-top:.75rem">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab(this,'prs')">PRs</button>
+      <button class="tab" onclick="switchTab(this,'ativ')">Atividade</button>
+      <button class="tab" onclick="switchTab(this,'rank')">Ranking</button>
+    </div>
+
+    <div id="t-prs">
+      <span class="section-label">Recordes pessoais</span>
+      <div class="pr-item"><div><p class="pr-move">Fran</p><p class="pr-date">há 3 dias — CrossFit Itaim</p></div><p class="pr-val">4:32</p></div>
+      <div class="pr-item"><div><p class="pr-move">Clean & Jerk</p><p class="pr-date">há 1 semana</p></div><p class="pr-val">95kg</p></div>
+      <div class="pr-item"><div><p class="pr-move">Back Squat</p><p class="pr-date">há 2 semanas</p></div><p class="pr-val">140kg</p></div>
+      <div class="pr-item"><div><p class="pr-move">Cindy</p><p class="pr-date">há 1 mês</p></div><p class="pr-val">22 rds</p></div>
+      <div class="pr-item"><div><p class="pr-move">Dead Lift</p><p class="pr-date">há 1 mês</p></div><p class="pr-val">180kg</p></div>
+      <div class="pr-item"><div><p class="pr-move">Grace</p><p class="pr-date">há 2 meses</p></div><p class="pr-val">3:18</p></div>
+
+      <span class="section-label" style="margin-top:1.25rem">Metas do mês</span>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:.5rem">
+        <div><div style="display:flex;justify-content:space-between;font-size:12px"><span>Check-ins</span><span id="m-ci">12/16</span></div><div class="progress-bar"><div class="progress-fill" style="width:75%"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px"><span>Boxes visitados</span><span>3/5</span></div><div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px"><span>PRs batidos</span><span>2/3</span></div><div class="progress-bar"><div class="progress-fill" style="width:67%"></div></div></div>
+      </div>
+    </div>
+
+    <div id="t-ativ" style="display:none">
+      <span class="section-label">Últimos treinos</span>
+      <div id="ativ-list"></div>
+    </div>
+
+    <div id="t-rank" style="display:none">
+      <span class="section-label">Top atletas — São Paulo</span>
+      <div id="rank-list"></div>
+      <div style="margin-top:8px;padding:10px 13px;background:rgba(83,74,183,.15);border-radius:10px;
+        border:1px solid var(--purple);display:flex;align-items:center;gap:10px">
+        <span class="rank-pos" style="color:var(--purple)">#42</span>
+        <span class="rank-name" id="rank-me" style="font-weight:600">Rafael Santos</span>
+        <span class="rank-score">1.247</span>
+      </div>
+      <p style="font-size:10px;color:#444;text-align:center;margin-top:8px">Pontos = check-ins × 100 + PRs × 50</p>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn" onclick="goNav('home')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" onclick="goNav('search')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <span>Buscar</span>
+    </button>
+    <button class="nav-btn active" onclick="goNav('profile')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <span>Perfil</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+const BOXES=[
+  {id:1,name:"CrossFit Itaim",loc:"Itaim Bibi, SP",city:"sp",rating:4.9,reviews:128,open:true,
+   color:"#1e1040",emoji:"🏋️",tags:["Competitivo","Alta ocupação"],
+   desc:"Um dos maiores boxes de SP com estrutura completa, rig duplo e coaching de elite. Turmas de no máximo 12 pessoas.",
+   horarios:["06:00","07:00","08:00","12:00","18:00","19:00","20:00"],
+   coaches:["Marcos Alves — L2","Renata Souza — L2","João Pedro — L1"]},
+  {id:2,name:"CrossFit Leblon",loc:"Leblon, RJ",city:"rj",rating:4.8,reviews:94,open:true,
+   color:"#0a2818",emoji:"🌊",tags:["Vista mar","Funcional"],
+   desc:"Box a 200m da praia com estrutura premium e comunidade incrível. Foco em performance e bem-estar.",
+   horarios:["06:30","07:30","09:00","12:00","17:30","18:30","19:30"],
+   coaches:["Fernanda Costa — L2","Rodrigo Lima — L1"]},
+  {id:3,name:"CrossFit Pinheiros",loc:"Pinheiros, SP",city:"sp",rating:4.7,reviews:76,open:false,
+   color:"#182808",emoji:"🌿",tags:["Iniciantes","Técnica"],
+   desc:"Box com foco em fundamentos e técnica. Programa de iniciantes com 4 semanas de imersão antes das aulas regulares.",
+   horarios:["07:00","09:00","12:00","18:00","19:30"],
+   coaches:["Ana Paula Dias — L2","Carlos Mendes — L1"]},
+  {id:4,name:"CrossFit Savassi",loc:"Savassi, BH",city:"bh",rating:4.9,reviews:112,open:true,
+   color:"#281808",emoji:"🔥",tags:["Games Athletes","Alta performance"],
+   desc:"Referência em Minas Gerais com múltiplos atletas classificados para o CrossFit Games. Treinos duplos disponíveis.",
+   horarios:["05:30","06:30","07:30","12:00","18:00","19:00","20:00"],
+   coaches:["Guilherme Alves — L3","Patrícia Nunes — L2","Diego Rocha — L2"]},
+  {id:5,name:"CrossFit Moema",loc:"Moema, SP",city:"sp",rating:4.6,reviews:58,open:true,
+   color:"#181828",emoji:"⚡",tags:["Funcional","Comunidade"],
+   desc:"Box moderno no coração de Moema. Comunidade acolhedora e programação equilibrada entre força e condicionamento.",
+   horarios:["06:00","07:00","12:00","18:00","19:00","20:00"],
+   coaches:["Luciana Ferreira — L2","André Matos — L1"]},
+  {id:6,name:"CrossFit Batel",loc:"Batel, Curitiba",city:"cwb",rating:4.8,reviews:83,open:false,
+   color:"#081828",emoji:"🏔️",tags:["Premium","Estrutura moderna"],
+   desc:"O mais moderno box de Curitiba. Rig de 20m, área de cardio exclusiva e programação competitiva.",
+   horarios:["06:00","07:00","08:00","12:00","18:00","19:00"],
+   coaches:["Rafael Cunha — L2","Isabela Torres — L2"]},
+];
+
+const ACTIVITY=[
+  {box:"CrossFit Itaim",wod:"Fran — 21-15-9 Thrusters + Pull-ups",data:"Hoje",pr:true},
+  {box:"CrossFit Pinheiros",wod:"5 rounds: 400m + 15 KB Swings 24kg",data:"Ontem",pr:false},
+  {box:"CrossFit Moema",wod:"Cindy — AMRAP 20min",data:"Há 3 dias",pr:false},
+  {box:"CrossFit Itaim",wod:"1RM Clean & Jerk",data:"Há 5 dias",pr:true},
+  {box:"CrossFit Savassi",wod:"Helen — 3 rounds for time",data:"Há 1 semana",pr:false},
+];
+
+const RANKING=[
+  {pos:1,name:"André Melo",score:3840},
+  {pos:2,name:"Camila Freitas",score:3620},
+  {pos:3,name:"Thiago Ramos",score:3290},
+  {pos:4,name:"Juliana Costa",score:2980},
+  {pos:5,name:"Pedro Alves",score:2750},
+];
+
+let ST={name:"Rafael Santos",city:"São Paulo",ci:12,prevScreen:"s-search",filter:"todos"};
+
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function toast(msg,color='var(--teal)'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.background=color;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function goNav(p){
+  if(p==='home'){renderHome();go('s-home');}
+  else if(p==='search'){renderSearch();go('s-search');}
+  else if(p==='profile'){renderProfile();go('s-profile');}
+}
+
+function goBack(){go(ST.prevScreen);}
+
+function init(name){return name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();}
+
+function stars(r){return '★'.repeat(Math.floor(r))+'☆'.repeat(5-Math.floor(r));}
+
+function boxCard(b){
+  return `<div class="box-card" onclick="openBox(${b.id})">
+    <div class="box-thumb" style="background:linear-gradient(135deg,${b.color},#0a0a0a)">${b.emoji}</div>
+    <div class="box-card-body">
+      <p class="box-card-name">${b.name}</p>
+      <p class="box-card-loc">📍 ${b.loc}</p>
+      <div style="display:flex;gap:4px;margin-bottom:5px">
+        <span class="badge ${b.open?'badge-teal':'badge-coral'}">${b.open?'Aberto':'Fechado'}</span>
+      </div>
+      <p class="box-stars">${stars(b.rating)} <span style="color:var(--gray);font-size:10px">${b.rating} (${b.reviews})</span></p>
+    </div>
+  </div>`;
+}
+
+// SIGNUP
+function selPlan(el,plan){
+  document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected'); ST.plan=plan;
+}
+function doSignup(){
+  ST.name=document.getElementById('in-name').value||'Rafael Santos';
+  ST.city=document.getElementById('in-city').value||'São Paulo';
+  toast('🎉 Conta criada! 7 dias grátis ativados.');
+  renderHome(); renderProfile(); go('s-home');
+}
+function loginDemo(){
+  toast('👋 Bem-vindo de volta!');
+  renderHome(); renderProfile(); go('s-home');
+}
+
+// HOME
+function renderHome(){
+  document.getElementById('h-name').textContent=ST.name.split(' ')[0];
+  document.getElementById('h-ci').textContent=ST.ci;
+  document.getElementById('h-avatar').textContent=init(ST.name);
+  const nearby=BOXES.filter(b=>b.open||b.city==='sp').slice(0,4);
+  document.getElementById('h-boxes').innerHTML=nearby.map(boxCard).join('');
+  document.getElementById('h-activity').innerHTML=ACTIVITY.slice(0,3).map(a=>`
+    <div class="act-item">
+      <div class="act-icon">${a.pr?'🏆':'💪'}</div>
+      <div>
+        <p class="act-title">${a.box}</p>
+        <p class="act-sub">${a.wod.slice(0,38)}... · ${a.data}</p>
+      </div>
+      ${a.pr?'<span class="act-val">PR!</span>':''}
+    </div>`).join('');
+}
+
+// SEARCH
+function renderSearch(){
+  const q=(document.getElementById('s-input')?.value||'').toLowerCase();
+  const f=ST.filter;
+  let boxes=BOXES;
+  if(f==='sp') boxes=boxes.filter(b=>b.city==='sp');
+  else if(f==='rj') boxes=boxes.filter(b=>b.city==='rj');
+  else if(f==='bh') boxes=boxes.filter(b=>b.city==='bh');
+  else if(f==='open') boxes=boxes.filter(b=>b.open);
+  if(q) boxes=boxes.filter(b=>b.name.toLowerCase().includes(q)||b.loc.toLowerCase().includes(q));
+  document.getElementById('s-boxes').innerHTML=boxes.map(boxCard).join('');
+}
+function setFilter(el,f){
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); ST.filter=f; renderSearch();
+}
+
+// BOX DETAIL
+function openBox(id){
+  const b=BOXES.find(x=>x.id===id);
+  ST.prevScreen=document.querySelector('.screen.active')?.id||'s-search';
+  document.getElementById('d-header').style.background=`linear-gradient(135deg,${b.color},#050505)`;
+  document.getElementById('d-name').textContent=b.name;
+  document.getElementById('d-loc').textContent='📍 '+b.loc;
+  document.getElementById('d-desc').textContent=b.desc;
+  document.getElementById('d-badges').innerHTML=
+    b.tags.map(t=>`<span class="badge badge-purple">${t}</span>`).join('')+
+    `<span class="badge ${b.open?'badge-teal':'badge-coral'}">${b.open?'Aberto agora':'Fechado'}</span>`;
+  document.getElementById('d-horarios').innerHTML=
+    b.horarios.map(h=>`<button class="horario-btn" onclick="selHorario(this)">${h}</button>`).join('');
+  document.getElementById('d-coaches').innerHTML=
+    b.coaches.map(c=>`<div class="coach-item">
+      <div class="coach-avatar">${c[0]}</div>
+      <span style="font-size:12px">${c}</span></div>`).join('');
+  const btn=document.getElementById('ci-btn');
+  btn.textContent='Fazer Check-in'; btn.style.background='var(--teal)'; btn.disabled=false;
+  go('s-box');
+}
+function selHorario(el){
+  document.querySelectorAll('.horario-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function doCheckin(){
+  const btn=document.getElementById('ci-btn');
+  btn.textContent='✓ Check-in confirmado!'; btn.style.background='var(--purple)'; btn.disabled=true;
+  ST.ci++;
+  toast('🏋️ Check-in realizado com sucesso!');
+  document.querySelectorAll('#h-ci, #p-ci').forEach(el=>el.textContent=ST.ci);
+  document.getElementById('m-ci').textContent=`${ST.ci}/16`;
+}
+
+// PROFILE
+function renderProfile(){
+  document.getElementById('p-avatar').textContent=init(ST.name);
+  document.getElementById('p-name').textContent=ST.name;
+  document.getElementById('p-city').textContent=ST.city;
+  document.getElementById('p-ci').textContent=ST.ci;
+  document.getElementById('rank-me').textContent=ST.name;
+  document.getElementById('ativ-list').innerHTML=ACTIVITY.map(a=>`
+    <div class="act-item">
+      <div class="act-icon">${a.pr?'🏆':'💪'}</div>
+      <div>
+        <p class="act-title">${a.box}</p>
+        <p class="act-sub">${a.wod.slice(0,42)}...</p>
+        <p class="act-sub">${a.data}</p>
+      </div>
+      ${a.pr?'<span class="act-val">PR!</span>':''}
+    </div>`).join('');
+  const cls={1:'gold',2:'silver',3:'bronze'};
+  document.getElementById('rank-list').innerHTML=RANKING.map(r=>`
+    <div class="rank-item">
+      <span class="rank-pos ${cls[r.pos]||''}">${r.pos}</span>
+      <span class="rank-name">${r.name}</span>
+      <span class="rank-score">${r.score.toLocaleString()}</span>
+    </div>`).join('');
+}
+
+function switchTab(el,tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['prs','ativ','rank'].forEach(id=>{
+    document.getElementById('t-'+id).style.display=id===tab?'block':'none';
+  });
+}
+
+renderSearch();
+</script>
+</body>
+</html>
