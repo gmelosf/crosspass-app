@@ -3,910 +3,800 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
-from plotly.subplots import make_subplots
+from datetime import datetime, timedelta
+import random
 
-st.set_page_config(
-    page_title="CrossPass — Modelo de Negócio",
-    page_icon="🏋️",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+st.set_page_config(page_title="CrossPass", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
 
-# ── Palette ───────────────────────────────────────────────────────────────────
-PURPLE = "#534AB7"
-PURPLE_DARK = "#3C3489"
-PURPLE_LIGHT = "#EEEDFE"
-TEAL = "#1D9E75"
-CORAL = "#D85A30"
-AMBER = "#BA7517"
-GRAY = "#888780"
-
-# ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    .metric-card {
-        background: #f7f6fe;
-        border-radius: 10px;
-        padding: 1rem 1.2rem;
-        border-left: 4px solid #534AB7;
-    }
-    .metric-label { font-size: 12px; color: #888780; margin-bottom: 4px; }
-    .metric-value { font-size: 24px; font-weight: 600; color: #3C3489; }
-    .metric-sub   { font-size: 11px; color: #888780; margin-top: 2px; }
-    .section-title {
-        font-size: 13px; font-weight: 600; color: #534AB7;
-        text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem;
-    }
-    .pitch-box {
-        background: #f7f6fe; border-radius: 10px;
-        padding: 1.2rem 1.4rem; border-left: 4px solid #534AB7;
-        line-height: 1.75;
-    }
-    .tag {
-        display: inline-block; background: #EEEDFE; color: #3C3489;
-        border-radius: 6px; padding: 2px 10px; font-size: 12px;
-        margin: 2px;
-    }
-    [data-testid="stSidebar"] { background: #3C3489; }
-    [data-testid="stSidebar"] * { color: white !important; }
-    [data-testid="stSidebar"] .stSlider > div > div { background: #534AB7; }
-    h1 { color: #3C3489; }
-    h2 { color: #534AB7; border-bottom: 1px solid #EEEDFE; padding-bottom: .3rem; }
-    h3 { color: #3C3489; }
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+html,body,[class*="css"]{font-family:'DM Sans',sans-serif}
+.hero{background:linear-gradient(135deg,#1e1548 0%,#0a0a0a 100%);border-radius:20px;padding:3rem 2rem;text-align:center;margin-bottom:2rem}
+.hero-title{font-family:'Bebas Neue';font-size:72px;line-height:.88;color:#fafaf8;margin-bottom:1rem}
+.hero-title span{color:#534AB7}
+.hero-sub{font-size:16px;color:#aaa;line-height:1.65;max-width:520px;margin:0 auto 2rem}
+.card{background:#111;border:1px solid #222;border-radius:14px;padding:1.2rem 1.4rem;margin-bottom:.75rem}
+.card-dark{background:#0d0d0d;border:1px solid #1a1a1a;border-radius:14px;padding:1.2rem 1.4rem;margin-bottom:.75rem}
+.stat-box{background:#111;border:1px solid #222;border-radius:12px;padding:1rem;text-align:center}
+.stat-num{font-family:'Bebas Neue';font-size:36px;color:#534AB7;line-height:1}
+.stat-lbl{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
+.stat-sub{font-size:11px;color:#1D9E75;margin-top:4px}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:3px 9px;border-radius:100px;margin:2px}
+.badge-purple{background:#EEEDFE;color:#3C3489}
+.badge-teal{background:#d0f0e4;color:#085041}
+.badge-coral{background:#fce8e0;color:#712B13}
+.badge-amber{background:#fef3cd;color:#633806}
+.badge-dark{background:#1a1a1a;color:#888}
+.pr-item{background:#111;border:1px solid #222;border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.pr-move{font-size:13px;font-weight:600;color:#fafaf8}
+.pr-date{font-size:10px;color:#888;margin-top:2px}
+.pr-val{font-family:'Bebas Neue';font-size:24px;color:#1D9E75}
+.pr-prev{font-size:10px;color:#888;text-align:right;margin-top:2px}
+.coach-card{background:#111;border:1px solid #222;border-radius:14px;padding:1.2rem;margin-bottom:.75rem}
+.coach-name{font-size:15px;font-weight:600;color:#fafaf8;margin-bottom:2px}
+.coach-spec{font-size:12px;color:#888;margin-bottom:8px}
+.coach-price{font-family:'Bebas Neue';font-size:22px;color:#534AB7}
+.rank-item{background:#111;border:1px solid #222;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.section-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:.02em;color:#fafaf8;margin-bottom:.25rem}
+.pill-metric{background:linear-gradient(135deg,#1a1230,#0d0d14);border:1px solid #2a2040;border-radius:12px;padding:.9rem 1rem;text-align:center}
+.pill-val{font-family:'Bebas Neue';font-size:28px;color:#534AB7}
+.pill-lbl{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.06em}
+.wod-box{background:linear-gradient(135deg,#1a1040,#0a0a18);border:1px solid #2a2060;border-radius:14px;padding:1.2rem 1.4rem;margin-bottom:1rem}
+.wod-title{font-family:'Bebas Neue';font-size:20px;color:#fafaf8;margin-bottom:.5rem}
+.streak-bar{background:linear-gradient(90deg,#3C3489,#534AB7);border-radius:10px;padding:1rem 1.4rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
 </style>
 """, unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# SIDEBAR — inputs globais
-# ══════════════════════════════════════════════════════════════════════════════
-with st.sidebar:
-    st.markdown("## 🏋️ CrossPass")
-    st.markdown("### Premissas do Modelo")
-    st.markdown("---")
-
-    st.markdown("**Mercado**")
-    n_boxes    = st.slider("Boxes ativos no Brasil", 300, 600, 440, 10)
-    alunos_box = st.slider("Alunos por box", 50, 250, 175, 5)
-
-    st.markdown("**Modelo CrossPass**")
-    mensalidade = st.slider("Mensalidade (R$/mês)", 200, 500, 300, 10)
-    take_rate   = st.slider("Take rate (%)", 15, 35, 25, 1) / 100
-    adopt_y5    = st.slider("Adoção máx. Ano 5 (% TAM)", 3, 20, 10, 1) / 100
-    saas_price  = st.slider("SaaS por box (R$/mês)", 100, 500, 250, 10)
-    cac         = st.slider("CAC (R$/usuário)", 50, 500, 150, 10)
-    churn_m     = st.slider("Churn mensal (%)", 2, 12, 5, 1) / 100
-    salary      = st.slider("Salário médio CLT (R$/mês)", 6000, 15000, 9000, 500)
-
-    st.markdown("**Valuation**")
-    wacc  = st.slider("WACC / Hurdle rate (%)", 15, 45, 25, 1) / 100
-    g_per = st.slider("Crescimento perpetuidade (%)", 1, 6, 3, 1) / 100
-
-    st.markdown("**Captação**")
-    seed    = st.number_input("Seed (R$)", 500_000, 5_000_000, 2_000_000, 100_000, format="%d")
-    serie_a = st.number_input("Série A (R$, Ano 2)", 0, 15_000_000, 5_000_000, 500_000, format="%d")
-
-# ══════════════════════════════════════════════════════════════════════════════
-# CÁLCULOS CENTRAIS
-# ══════════════════════════════════════════════════════════════════════════════
-tam = n_boxes * alunos_box
-
-# Growth fractions (Ano 0..5)
-g_frac   = [0, 0.04, 0.14, 0.35, 0.65, 1.0]
-pboxes   = [0, 22, 60, 120, 200, 300]
-sboxes   = [0, 8, 22, 50, 100, 170]
-hc       = [3, 6, 11, 18, 26, 35]
-infra_a  = [50_000, 60_000, 120_000, 200_000, 300_000, 420_000]
-comm_a   = [80_000, 120_000, 200_000, 300_000, 400_000, 500_000]
-capex_a  = [50_000, 30_000, 30_000, 40_000, 50_000, 60_000]
-capsoft  = [200_000, 80_000, 60_000, 40_000, 30_000, 20_000]
-
-anos = ["Ano 0", "Ano 1", "Ano 2", "Ano 3", "Ano 4", "Ano 5"]
-
-users    = [round(tam * adopt_y5 * f) for f in g_frac]
-rev_b2c  = [u * mensalidade * 12 for u in users]
-rev_saas = [sb * saas_price * 12 for sb in sboxes]
-rev_net  = [b * take_rate + s for b, s in zip(rev_b2c, rev_saas)]
-
-# Custos
-team_cost = [h * salary * 12 for h in hc]
-new_users = [max(0, users[i] - users[i-1]) if i > 0 else users[0] for i in range(6)]
-mkt_cost  = [n * cac for n in new_users]
-total_cost = [team_cost[i] + mkt_cost[i] + infra_a[i] + comm_a[i] for i in range(6)]
-
-ebitda = [rev_net[i] - total_cost[i] for i in range(6)]
-
-# D&A simplificado
-amort = [capsoft[0]/3] + [sum(capsoft[max(0,i-2):i+1])/3 for i in range(1,6)]
-ebit  = [ebitda[i] - amort[i] for i in range(6)]
-
-# Impostos e Lucro Líquido
-tax_rate = 0.34
-ir = [max(0, -e * tax_rate) for e in ebit]
-net_income = [ebit[i] - ir[i] for i in range(6)]
-
-# Caixa acumulado
-cum_burn = []
-cb = 0
-for e in ebitda:
-    cb += min(0, e)
-    cum_burn.append(cb)
-max_burn = abs(min(cum_burn))
-
-# FCO / FCI / FCF
-fco = [net_income[i] + amort[i] for i in range(6)]
-fci = [-(capex_a[i] + capsoft[i]) for i in range(6)]
-fcf_fin = [seed if i == 0 else (serie_a if i == 2 else 0) for i in range(6)]
-delta_cash = [fco[i] + fci[i] + fcf_fin[i] for i in range(6)]
-cash = []
-c = 0
-for d in delta_cash:
-    c += d
-    cash.append(c)
-
-# FCFF para DCF
-nopat = [max(0, ebit[i]) * (1 - tax_rate) for i in range(6)]
-fcff  = [nopat[i] + amort[i] - capex_a[i] - capsoft[i] for i in range(6)]
-
-pv_fcff = sum(fcff[i+1] / (1+wacc)**(i+1) for i in range(5))
-tv = fcff[5] * (1 + g_per) / (wacc - g_per) if wacc > g_per else 0
-pv_tv = tv / (1+wacc)**5
-npv = pv_fcff + pv_tv
-
-# IRR
-irr_flows = [-seed] + fcff[1:5] + [fcff[5] + tv]
-try:
-    from numpy_financial import irr as np_irr
-    irr_val = np_irr(irr_flows)
-except:
-    # manual IRR approx
-    irr_val = None
-
-# Unit Economics
-mrr_net   = mensalidade * take_rate
-ltv       = mrr_net / churn_m
-ltv_cac   = ltv / cac
-payback_m = cac / mrr_net
-churn_annual = 1 - (1 - churn_m)**12
-retention = (1 - churn_m)**12
-
-# Break-even
-bey = next((i for i, e in enumerate(ebitda) if e > 0), None)
-
-# ══════════════════════════════════════════════════════════════════════════════
-# PÁGINAS
-# ══════════════════════════════════════════════════════════════════════════════
-page = st.sidebar.radio(
-    "Navegação",
-    ["Visão Geral", "Mercado", "Modelo Financeiro",
-     "Valuation & DCF", "Unit Economics", "Cenários",
-     "Business Canvas", "Pitch"],
-    label_visibility="collapsed"
-)
-
-def fmt_brl(v, suffix=""):
-    if abs(v) >= 1_000_000:
-        return f"R$ {v/1_000_000:.1f}M{suffix}"
-    if abs(v) >= 1_000:
-        return f"R$ {v/1_000:.0f}k{suffix}"
-    return f"R$ {v:.0f}{suffix}"
-
-def metric(label, value, sub=""):
-    st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">{label}</div>
-        <div class="metric-value">{value}</div>
-        <div class="metric-sub">{sub}</div>
-    </div>""", unsafe_allow_html=True)
-
-# ══════════════════════════════════════════════════════════════════════════════
-if page == "Visão Geral":
-# ══════════════════════════════════════════════════════════════════════════════
-    st.title("🏋️ CrossPass")
-    st.markdown("##### Marketplace de CrossFit — Modelo de Negócio Integrado")
-    st.markdown("---")
-
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: metric("Usuários Ano 5", f"{users[5]:,.0f}", f"{adopt_y5*100:.0f}% do TAM")
-    with c2: metric("Receita Líq. Ano 5", fmt_brl(rev_net[5]), "B2C + SaaS")
-    with c3: metric("Capital Necessário", fmt_brl(max_burn), "pico de queima")
-    with c4: metric("Break-even", f"Ano {bey}" if bey else "Após Y5", "1º EBITDA positivo")
-
-    st.markdown("---")
-    c1, c2 = st.columns(2)
-
-    with c1:
-        st.subheader("EBITDA x Receita Líquida")
-        fig = go.Figure()
-        fig.add_bar(x=anos, y=[r/1e6 for r in rev_net],
-                    name="Receita Líquida", marker_color=PURPLE, opacity=0.85)
-        fig.add_scatter(x=anos, y=[e/1e6 for e in ebitda],
-                        name="EBITDA", line=dict(color=TEAL, width=2.5),
-                        mode="lines+markers", marker=dict(size=7))
-        fig.add_hline(y=0, line_dash="dot", line_color=CORAL, line_width=1)
-        fig.update_layout(height=320, margin=dict(t=10,b=10,l=10,r=10),
-                          legend=dict(orientation="h", y=1.1),
-                          yaxis_title="R$ milhões",
-                          plot_bgcolor="white", paper_bgcolor="white")
-        st.plotly_chart(fig, use_container_width=True)
-
-    with c2:
-        st.subheader("Caixa Acumulado")
-        colors = [TEAL if c >= 0 else CORAL for c in cash]
-        fig2 = go.Figure()
-        fig2.add_bar(x=anos, y=[c/1e6 for c in cash],
-                     marker_color=colors, opacity=0.85)
-        fig2.add_hline(y=0, line_dash="dot", line_color=GRAY, line_width=1)
-        fig2.update_layout(height=320, margin=dict(t=10,b=10,l=10,r=10),
-                           yaxis_title="R$ milhões",
-                           plot_bgcolor="white", paper_bgcolor="white")
-        st.plotly_chart(fig2, use_container_width=True)
-
-    st.markdown("---")
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: metric("TAM", f"{tam:,.0f} praticantes", f"{n_boxes} boxes × {alunos_box} alunos")
-    with c2: metric("LTV / CAC", f"{ltv_cac:.1f}x", "Meta: > 3x")
-    with c3: metric("VPL (NPV)", fmt_brl(npv), f"WACC {wacc*100:.0f}%")
-    with c4: metric("Margem EBITDA Y5", f"{ebitda[5]/rev_net[5]*100:.0f}%" if rev_net[5]>0 else "—", "Ano 5")
-
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "Mercado":
-# ══════════════════════════════════════════════════════════════════════════════
-    st.title("Análise de Mercado")
-
-    c1, c2, c3 = st.columns(3)
-    with c1: metric("TAM", f"{tam:,.0f}", f"{n_boxes} boxes × {alunos_box} alunos/box")
-    with c2: metric("SAM (5 capitais)", f"{int(tam*0.63):,.0f}", "SP, RJ, BH, CWB, POA — 63% dos boxes")
-    with c3: metric("SOM (Ano 5)", f"{users[5]:,.0f}", f"{adopt_y5*100:.0f}% de penetração")
-
-    st.markdown("---")
-    c1, c2 = st.columns(2)
-
-    with c1:
-        st.subheader("Funil TAM / SAM / SOM")
-        fig = go.Figure(go.Funnel(
-            y=["TAM — CrossFit BR", "SAM — 5 capitais", "SOM — Ano 5"],
-            x=[tam, int(tam*0.63), users[5]],
-            marker_color=[PURPLE_DARK, PURPLE, TEAL],
-            textinfo="value+percent initial",
-        ))
-        fig.update_layout(height=320, margin=dict(t=10,b=10,l=10,r=10),
-                          plot_bgcolor="white", paper_bgcolor="white")
-        st.plotly_chart(fig, use_container_width=True)
-
-    with c2:
-        st.subheader("Crescimento de Usuários")
-        fig2 = go.Figure()
-        fig2.add_bar(x=anos, y=users, marker_color=PURPLE, opacity=0.85, name="Usuários")
-        fig2.update_layout(height=320, margin=dict(t=10,b=10,l=10,r=10),
-                           yaxis_title="Usuários ativos",
-                           plot_bgcolor="white", paper_bgcolor="white")
-        st.plotly_chart(fig2, use_container_width=True)
-
-    st.markdown("---")
-    st.subheader("Distribuição de Boxes por Estado (amostra)")
-    estados = {"SP": 180, "RJ": 97, "MG": 40, "PR": 30, "RS": 25,
-               "DF": 15, "CE": 12, "GO": 12, "SC": 10, "BA": 10, "Outros": 19}
-    df_estados = pd.DataFrame({"Estado": list(estados.keys()),
-                                "Boxes": list(estados.values())})
-    fig3 = px.bar(df_estados, x="Estado", y="Boxes",
-                  color_discrete_sequence=[PURPLE])
-    fig3.update_layout(height=280, margin=dict(t=10,b=10,l=10,r=10),
-                       plot_bgcolor="white", paper_bgcolor="white")
-    st.plotly_chart(fig3, use_container_width=True)
-    st.caption("Fonte: crossfit.com/gyms/brazil (mar/2026). SP inclui cidade e interior.")
-
-    st.markdown("---")
-    st.subheader("Benchmarks de Mercado")
-    bm = {
-        "Mercado global CrossFit (USD)": "US$ 2,8–4,0 bilhões",
-        "Crescimento anual projetado": "7–12% a.a.",
-        "ClassPass — receita esperada 2024": "US$ 500M (+20% YoY)",
-        "Ocupação média de academia": "37% da capacidade (ClassPass, 2026)",
-        "Crescimento de reservas fitness 2025": "+36% YoY (ClassPass, 2026)",
-        "CrossFit Open 2024 — participantes BR": "3º país em inscritos globais",
+# ── State ─────────────────────────────────────────────────────────────────────
+DEFAULTS = {
+    "page": "landing", "user": None, "checkins": 14,
+    "log_entries": [], "prs": {
+        "Fran": {"val": "4:32", "prev": "5:10", "date": "3 dias atrás", "unit": "tempo"},
+        "Clean & Jerk": {"val": "95", "prev": "90", "date": "1 semana atrás", "unit": "kg"},
+        "Back Squat": {"val": "140", "prev": "132.5", "date": "2 semanas atrás", "unit": "kg"},
+        "Cindy": {"val": "22", "prev": "19", "date": "1 mês atrás", "unit": "rounds"},
+        "Dead Lift": {"val": "180", "prev": "172.5", "date": "1 mês atrás", "unit": "kg"},
+        "Grace": {"val": "3:18", "prev": "3:55", "date": "2 meses atrás", "unit": "tempo"},
+        "Snatch": {"val": "75", "prev": "70", "date": "3 semanas atrás", "unit": "kg"},
+        "Helen": {"val": "8:42", "prev": "9:20", "date": "3 semanas atrás", "unit": "tempo"},
     }
-    for k, v in bm.items():
-        cols = st.columns([2,3])
-        cols[0].markdown(f"**{k}**")
-        cols[1].markdown(v)
+}
+for k, v in DEFAULTS.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
 
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "Modelo Financeiro":
-# ══════════════════════════════════════════════════════════════════════════════
-    st.title("Modelo Financeiro")
+def go(page):
+    st.session_state.page = page
+    st.rerun()
 
-    tab1, tab2, tab3 = st.tabs(["DRE", "Fluxo de Caixa", "Balanço Resumido"])
+def badge(lbl, tipo="purple"):
+    return f'<span class="badge badge-{tipo}">{lbl}</span>'
 
-    with tab1:
-        st.subheader("Demonstração do Resultado (R$)")
-        repasse = [-r * (1 - take_rate) for r in rev_b2c]
-        taxas   = [-r * 0.02 for r in rev_b2c]
-        rec_liq = [rev_b2c[i] + repasse[i] + taxas[i] + rev_saas[i] for i in range(6)]
-        marg_b  = [rec_liq[i] / (rev_b2c[i] + rev_saas[i]) * 100
-                   if (rev_b2c[i]+rev_saas[i]) > 0 else 0 for i in range(6)]
+def stars(r):
+    return "★" * int(r) + "☆" * (5 - int(r))
 
-        df_dre = pd.DataFrame({
-            "Item": [
-                "Usuários ativos", "Receita Bruta B2C", "Receita SaaS",
-                "Receita Bruta Total", "(-) Repasse aos boxes",
-                "(-) Taxa processadora (2%)", "Receita Líquida",
-                "(-) Time", "(-) Marketing (CAC)", "(-) Infra + Cloud",
-                "(-) Custo comercial", "EBITDA", "Margem EBITDA %",
-                "(-) D&A", "EBIT", "Lucro Líquido"
-            ]
-        })
-        for i, ano in enumerate(anos):
-            df_dre[ano] = [
-                f"{users[i]:,.0f}",
-                fmt_brl(rev_b2c[i]),
-                fmt_brl(rev_saas[i]),
-                fmt_brl(rev_b2c[i]+rev_saas[i]),
-                fmt_brl(repasse[i]),
-                fmt_brl(taxas[i]),
-                fmt_brl(rec_liq[i]),
-                fmt_brl(-team_cost[i]),
-                fmt_brl(-mkt_cost[i]),
-                fmt_brl(-infra_a[i]),
-                fmt_brl(-comm_a[i]),
-                fmt_brl(ebitda[i]),
-                f"{ebitda[i]/rec_liq[i]*100:.1f}%" if rec_liq[i]>0 else "—",
-                fmt_brl(-amort[i]),
-                fmt_brl(ebit[i]),
-                fmt_brl(net_income[i]),
-            ]
+# ── Mock Data ─────────────────────────────────────────────────────────────────
+COACHES = [
+    {"id":1,"name":"Marcos Alves","spec":"Weightlifting & Competição","cert":"CF Level 3","rating":4.9,"reviews":87,"price":490,"students":34,"bio":"10 anos de experiência, 3x campeão estadual. Especialista em técnica de levantamento e programação de competição.","tags":["Competição","Levantamento","Programação"],"avatar":"MA"},
+    {"id":2,"name":"Fernanda Costa","spec":"Fundamentos & Iniciantes","cert":"CF Level 2","rating":4.8,"reviews":64,"price":290,"students":28,"bio":"Especialista em ensinar CrossFit do zero. Método próprio de progressão para iniciantes com foco em movimento seguro.","tags":["Iniciantes","Técnica","Mobilidade"],"avatar":"FC"},
+    {"id":3,"name":"Guilherme Ramos","spec":"Endurance & Metcons","cert":"CF Level 2 + USAW","rating":4.9,"reviews":112,"price":390,"students":51,"bio":"Ex-triatleta. Programação focada em capacidade aeróbica e metcons de alta intensidade. Atleta da temporada 2023.","tags":["Endurance","Metcon","Programação"],"avatar":"GR"},
+    {"id":4,"name":"Patrícia Nunes","spec":"Mobilidade & Prevenção","cert":"CF Level 2 + Fisio","rating":5.0,"reviews":43,"price":450,"students":19,"bio":"Fisioterapeuta e coach CF Level 2. Trabalha recuperação de lesões e prevenção com foco em movimento funcional.","tags":["Mobilidade","Reabilitação","Força"],"avatar":"PN"},
+    {"id":5,"name":"Diego Rocha","spec":"Força & Powerlifting","cert":"CF Level 2","rating":4.7,"reviews":55,"price":350,"students":22,"bio":"Background em powerlifting. Especialista em ciclos de força e periodização para atletas que querem ganhar carga.","tags":["Força","Ciclos","Periodização"],"avatar":"DR"},
+]
 
-        st.dataframe(df_dre.set_index("Item"), use_container_width=True)
+PROGRAMS = [
+    {"name":"8 Semanas de Força","coach":"Guilherme Ramos","price":197,"duration":"8 semanas","level":"Intermediário","description":"Ciclo completo de força com foco em squat, deadlift e press. Inclui vídeos de técnica e check-in semanal.","tags":["Força","Intermediário"]},
+    {"name":"CrossFit do Zero","coach":"Fernanda Costa","price":97,"duration":"4 semanas","level":"Iniciante","description":"Programa de fundamentos para quem está começando. Aprenda os movimentos base com segurança e progressão.","tags":["Iniciante","Fundamentos"]},
+    {"name":"Open Prep 2025","coach":"Marcos Alves","price":297,"duration":"12 semanas","level":"Avançado","description":"Preparação completa para o CrossFit Open. Programação dupla diária, simulados e análise de performance.","tags":["Competição","Avançado"]},
+    {"name":"Mobilidade Diária","coach":"Patrícia Nunes","price":67,"duration":"Permanente","level":"Todos","description":"Protocolo diário de mobilidade e aquecimento. 15-20 min por dia para mover melhor e se lesionar menos.","tags":["Mobilidade","Prevenção"]},
+]
 
-        st.subheader("Composição da Receita")
-        fig = go.Figure()
-        fig.add_bar(x=anos, y=[r/1e6 for r in rev_b2c],
-                    name="B2C (bruto)", marker_color=PURPLE, opacity=0.8)
-        fig.add_bar(x=anos, y=[r/1e6 for r in rev_saas],
-                    name="SaaS", marker_color=TEAL, opacity=0.8)
-        fig.add_scatter(x=anos, y=[e/1e6 for e in ebitda],
-                        name="EBITDA", line=dict(color=CORAL, width=2),
-                        mode="lines+markers")
-        fig.update_layout(barmode="stack", height=320,
-                          yaxis_title="R$ milhões",
-                          margin=dict(t=10,b=10,l=10,r=10),
-                          legend=dict(orientation="h", y=1.1),
-                          plot_bgcolor="white", paper_bgcolor="white")
-        st.plotly_chart(fig, use_container_width=True)
+WOD_TODAY = {
+    "name": "AMRAP 20",
+    "movements": ["5 Pull-ups", "10 Push-ups", "15 Air Squats"],
+    "score_type": "rounds",
+    "rx_weight": None,
+    "coach_tip": "Mantenha um ritmo sustentável desde o início. Mire em completar cada round em 1-1:30min.",
+}
 
-    with tab2:
-        st.subheader("Fluxo de Caixa (R$)")
-        df_cf = pd.DataFrame({"Item": [
-            "FCO — Lucro Líquido", "FCO — D&A (não-caixa)",
-            "Caixa Operacional (FCO)",
-            "(-) Capex hardware", "(-) Software capitalizado",
-            "Caixa Investimentos (FCI)",
-            "(+) Captação Seed", "(+) Captação Série A",
-            "Caixa Financiamentos (FCF)",
-            "Variação Líquida de Caixa", "CAIXA FINAL"
-        ]})
-        for i, ano in enumerate(anos):
-            df_cf[ano] = [
-                fmt_brl(net_income[i]),
-                fmt_brl(amort[i]),
-                fmt_brl(fco[i]),
-                fmt_brl(-capex_a[i]),
-                fmt_brl(-capsoft[i]),
-                fmt_brl(fci[i]),
-                fmt_brl(seed if i==0 else 0),
-                fmt_brl(serie_a if i==2 else 0),
-                fmt_brl(fcf_fin[i]),
-                fmt_brl(delta_cash[i]),
-                fmt_brl(cash[i]),
-            ]
-        st.dataframe(df_cf.set_index("Item"), use_container_width=True)
+BOXES = [
+    {"name":"CrossFit Itaim","loc":"SP","alunos":142,"churn":4.2,"ocupacao":71,"receita":46800,"rating":4.9},
+    {"name":"CrossFit Leblon","loc":"RJ","alunos":98,"churn":5.1,"ocupacao":63,"receita":31200,"rating":4.8},
+    {"name":"CrossFit Pinheiros","loc":"SP","alunos":87,"churn":3.8,"ocupacao":58,"receita":28400,"rating":4.7},
+]
 
-        fig2 = go.Figure()
-        fig2.add_bar(x=anos, y=[f/1e6 for f in fco], name="FCO", marker_color=TEAL)
-        fig2.add_bar(x=anos, y=[f/1e6 for f in fci], name="FCI", marker_color=CORAL)
-        fig2.add_bar(x=anos, y=[f/1e6 for f in fcf_fin], name="FCF", marker_color=AMBER)
-        fig2.add_scatter(x=anos, y=[c/1e6 for c in cash],
-                         name="Caixa final", line=dict(color=PURPLE, width=2.5),
-                         mode="lines+markers")
-        fig2.update_layout(barmode="relative", height=320,
-                           yaxis_title="R$ milhões",
-                           margin=dict(t=10,b=10,l=10,r=10),
-                           legend=dict(orientation="h", y=1.1),
-                           plot_bgcolor="white", paper_bgcolor="white")
-        st.plotly_chart(fig2, use_container_width=True)
+def gen_performance_data():
+    dates = [datetime.now() - timedelta(days=x) for x in range(90, 0, -1)]
+    base = 100
+    data = []
+    for d in dates:
+        base += random.uniform(-2, 3)
+        data.append({"date": d, "score": round(base, 1)})
+    return pd.DataFrame(data)
 
-    with tab3:
-        st.subheader("Balanço Resumido (R$)")
-        ar  = [rev_b2c[i] * 15/360 for i in range(6)]
-        sw  = [sum(capsoft[:i+1]) - sum(amort[:i+1]) for i in range(6)]
-        ap  = [rev_b2c[i] * (1-take_rate) * 30/360 for i in range(6)]
-        cap_social = [seed + (serie_a if i >= 2 else 0) for i in range(6)]
-        retain = [sum(net_income[:i+1]) for i in range(6)]
-        pl  = [cap_social[i] + retain[i] for i in range(6)]
-
-        df_bs = pd.DataFrame({"Item": [
-            "Caixa", "Contas a Receber", "Software Líquido",
-            "TOTAL ATIVO",
-            "Contas a Pagar", "TOTAL PASSIVO",
-            "Capital Social", "Lucros/Prejuízos Acum.",
-            "PATRIMÔNIO LÍQUIDO",
-            "TOTAL P + PL"
-        ]})
-        for i, ano in enumerate(anos):
-            total_at = cash[i] + ar[i] + max(0, sw[i])
-            total_pas = ap[i]
-            df_bs[ano] = [
-                fmt_brl(cash[i]), fmt_brl(ar[i]), fmt_brl(max(0,sw[i])),
-                fmt_brl(total_at),
-                fmt_brl(ap[i]), fmt_brl(total_pas),
-                fmt_brl(cap_social[i]), fmt_brl(retain[i]),
-                fmt_brl(pl[i]),
-                fmt_brl(total_pas + pl[i]),
-            ]
-        st.dataframe(df_bs.set_index("Item"), use_container_width=True)
-
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "Valuation & DCF":
-# ══════════════════════════════════════════════════════════════════════════════
-    st.title("Valuation & DCF")
-
-    c1, c2, c3 = st.columns(3)
-    with c1: metric("VPL (NPV)", fmt_brl(npv), f"WACC {wacc*100:.0f}%, g {g_per*100:.0f}%")
-    with c2: metric("Valor Terminal", fmt_brl(tv), f"Gordon Growth — g={g_per*100:.0f}%")
-    with c3: metric("EV/Receita Ano 5", f"{npv/rev_net[5]:.1f}x" if rev_net[5]>0 else "—",
-                    "múltiplo sobre receita líquida")
-
-    st.markdown("---")
-    c1, c2 = st.columns(2)
-
-    with c1:
-        st.subheader("FCFF por Ano")
-        colors_fcff = [TEAL if f >= 0 else CORAL for f in fcff]
-        fig = go.Figure()
-        fig.add_bar(x=anos, y=[f/1e6 for f in fcff],
-                    marker_color=colors_fcff, opacity=0.85)
-        fig.add_hline(y=0, line_dash="dot", line_color=GRAY)
-        fig.update_layout(height=300, yaxis_title="R$ milhões",
-                          margin=dict(t=10,b=10,l=10,r=10),
-                          plot_bgcolor="white", paper_bgcolor="white")
-        st.plotly_chart(fig, use_container_width=True)
-
-    with c2:
-        st.subheader("Composição do VPL")
-        labels = ["PV FCFFs (Y1-Y5)", "PV Valor Terminal"]
-        values = [pv_fcff, pv_tv]
-        colors_ = [PURPLE, TEAL]
-        fig2 = go.Figure(go.Pie(labels=labels, values=values,
-                                 marker_colors=colors_, hole=0.5,
-                                 textinfo="label+percent"))
-        fig2.update_layout(height=300, margin=dict(t=10,b=10,l=30,r=30),
-                           showlegend=True)
-        st.plotly_chart(fig2, use_container_width=True)
-
-    st.markdown("---")
-    st.subheader("Tabela de Sensibilidade — VPL (R$ M) vs WACC × g")
-    wacc_range = [0.20, 0.25, 0.30, 0.35, 0.40]
-    g_range    = [0.02, 0.03, 0.04, 0.05]
-
-    sens_data = []
-    for gv in g_range:
-        row_s = []
-        for wv in wacc_range:
-            if wv <= gv:
-                row_s.append(float("nan"))
-                continue
-            pv_f = sum(fcff[i+1]/(1+wv)**(i+1) for i in range(5))
-            tv_s = fcff[5]*(1+gv)/(wv-gv)/(1+wv)**5
-            row_s.append(round((pv_f + tv_s)/1e6, 1))
-        sens_data.append(row_s)
-
-    df_sens = pd.DataFrame(sens_data,
-                           index=[f"g={int(g*100)}%" for g in g_range],
-                           columns=[f"WACC={int(w*100)}%" for w in wacc_range])
-
-    fig3 = go.Figure(go.Heatmap(
-        z=df_sens.values,
-        x=df_sens.columns.tolist(),
-        y=df_sens.index.tolist(),
-        colorscale=[[0, CORAL],[0.5, "#EEEDFE"],[1, TEAL]],
-        text=[[f"R${v:.1f}M" if not np.isnan(v) else "N/A"
-               for v in row] for row in df_sens.values],
-        texttemplate="%{text}",
-        showscale=True,
-    ))
-    fig3.update_layout(height=280, margin=dict(t=10,b=10,l=80,r=10))
-    st.plotly_chart(fig3, use_container_width=True)
-
-    # IRR calc via numpy
-    st.markdown("---")
-    st.subheader("TIR (IRR) e Múltiplos")
-    c1, c2, c3 = st.columns(3)
-
-    irr_flows_arr = np.array([-seed] + fcff[1:5] + [fcff[5]+tv])
-    try:
-        coeffs = np.poly1d(irr_flows_arr[::-1])
-        roots = np.roots(coeffs)
-        real_roots = [r.real for r in roots if abs(r.imag) < 1e-6 and r.real > 0]
-        irr_est = min(real_roots) - 1 if real_roots else None
-    except:
-        irr_est = None
-
-    with c1:
-        irr_str = f"{irr_est*100:.1f}%" if irr_est and 0 < irr_est < 5 else "Calcular no Excel"
-        metric("TIR (IRR)", irr_str, "sobre investimento inicial")
-    with c2:
-        metric("EV/EBITDA Ano 5",
-               f"{npv/ebitda[5]:.1f}x" if ebitda[5]>0 else "N/A",
-               "múltiplo EV/EBITDA")
-    with c3:
-        metric("Payback Simples",
-               f"{seed/max(1,cash[5]/5):.1f} anos",
-               "estimativa sobre caixa gerado")
-
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "Unit Economics":
-# ══════════════════════════════════════════════════════════════════════════════
-    st.title("Unit Economics")
-
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: metric("MRR líquido / usuário", f"R$ {mrr_net:.0f}/mês", "mensalidade × take rate")
-    with c2: metric("LTV", fmt_brl(ltv), f"vida média {1/churn_m:.0f} meses")
-    with c3: metric("CAC", f"R$ {cac:,.0f}", "custo de aquisição")
-    with c4:
-        color = TEAL if ltv_cac >= 3 else CORAL
-        metric("LTV / CAC", f"{ltv_cac:.1f}x", "meta: acima de 3x")
-
-    st.markdown("---")
-    c1, c2 = st.columns(2)
-
-    with c1:
-        st.subheader("Curva de Recuperação do CAC")
-        months = list(range(1, 37))
-        cum_rev = [mrr_net * m for m in months]
-        cac_line = [cac] * len(months)
-        payback_month = next((m for m, r in zip(months, cum_rev) if r >= cac), None)
-
-        fig = go.Figure()
-        fig.add_scatter(x=months, y=cum_rev, name="Receita acumulada",
-                        line=dict(color=TEAL, width=2.5), fill="tozeroy",
-                        fillcolor="rgba(29,158,117,0.1)")
-        fig.add_scatter(x=months, y=cac_line, name="CAC",
-                        line=dict(color=CORAL, width=2, dash="dash"))
-        if payback_month:
-            fig.add_vline(x=payback_month, line_dash="dot",
-                          line_color=PURPLE, annotation_text=f"Payback: {payback_month}m")
-        fig.update_layout(height=300, xaxis_title="Meses",
-                          yaxis_title="R$",
-                          margin=dict(t=10,b=10,l=10,r=10),
-                          legend=dict(orientation="h", y=1.1),
-                          plot_bgcolor="white", paper_bgcolor="white")
-        st.plotly_chart(fig, use_container_width=True)
-
-    with c2:
-        st.subheader("Curva de Retenção de Cohort")
-        months_r = list(range(0, 25))
-        retention_curve = [(1-churn_m)**m for m in months_r]
-
-        fig2 = go.Figure()
-        fig2.add_scatter(x=months_r, y=[r*100 for r in retention_curve],
-                         fill="tozeroy", line=dict(color=PURPLE, width=2.5),
-                         fillcolor="rgba(83,74,183,0.1)")
-        fig2.add_hline(y=50, line_dash="dot", line_color=GRAY,
-                       annotation_text="50% restantes")
-        fig2.update_layout(height=300, xaxis_title="Meses após aquisição",
-                           yaxis_title="% usuários retidos",
-                           margin=dict(t=10,b=10,l=10,r=10),
-                           plot_bgcolor="white", paper_bgcolor="white")
-        st.plotly_chart(fig2, use_container_width=True)
-
-    st.markdown("---")
-    st.subheader("Sensibilidade LTV/CAC vs Take Rate × Churn")
-    takes = [0.15, 0.20, 0.25, 0.30, 0.35]
-    churns = [0.03, 0.05, 0.07, 0.10, 0.12]
-    matrix = [[round((mensalidade*t/c)/cac, 1) for t in takes] for c in churns]
-    df_ltv = pd.DataFrame(matrix,
-                          index=[f"Churn {int(c*100)}%/mês" for c in churns],
-                          columns=[f"Take {int(t*100)}%" for t in takes])
-
-    def color_ltvcac(val):
-        if val >= 5: return f"background-color: {TEAL}; color: white"
-        elif val >= 3: return f"background-color: {PURPLE_LIGHT}; color: {PURPLE_DARK}"
-        else: return f"background-color: #fce8e8; color: {CORAL}"
-
-    st.dataframe(df_ltv.style.applymap(color_ltvcac), use_container_width=True)
-    st.caption("Verde = excelente (>5x) | Roxo = saudável (3-5x) | Vermelho = abaixo do mínimo (<3x)")
-
-    st.markdown("---")
-    st.subheader("Cohort — Receita Acumulada por Coorte")
-    ret_annual = (1 - churn_m)**12
-    cohort_data = {}
-    for cy in range(1, 6):
-        nu = new_users[cy]
-        row_r = []
-        for obs in range(6):
-            age = obs - cy
-            if age < 0:
-                row_r.append(0)
-            else:
-                retained = nu * ret_annual**age
-                row_r.append(retained * mensalidade * take_rate * 12)
-        cohort_data[f"Coorte Ano {cy}"] = row_r
-
-    df_cohort = pd.DataFrame(cohort_data, index=anos).T
-    fig3 = px.bar(df_cohort, barmode="stack",
-                  color_discrete_sequence=[PURPLE_DARK, PURPLE, "#7F77DD", "#AFA9EC", PURPLE_LIGHT])
-    fig3.update_layout(height=300, yaxis_title="Receita líquida (R$)",
-                       xaxis_title="Ano de observação",
-                       margin=dict(t=10,b=10,l=10,r=10),
-                       legend=dict(orientation="h", y=1.15),
-                       plot_bgcolor="white", paper_bgcolor="white")
-    st.plotly_chart(fig3, use_container_width=True)
-
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "Cenários":
-# ══════════════════════════════════════════════════════════════════════════════
-    st.title("Análise de Cenários")
-
-    scenarios = {
-        "Pessimista": {"adopt": 0.05, "take": 0.20, "cac": 300, "churn": 0.08},
-        "Base":       {"adopt": adopt_y5, "take": take_rate, "cac": cac, "churn": churn_m},
-        "Otimista":   {"adopt": 0.18, "take": 0.30, "cac": 90,  "churn": 0.03},
-    }
-
-    results = {}
-    for name, p in scenarios.items():
-        u5 = round(tam * p["adopt"])
-        rev5 = u5 * mensalidade * 12 * p["take"] + 170 * saas_price * 12
-        team5 = 35 * salary * 12
-        mkt5 = u5 * p["cac"]
-        eb5 = rev5 - team5 - mkt5 - infra_a[5] - comm_a[5]
-        ltv5 = mensalidade * p["take"] / p["churn"]
-        lc5 = ltv5 / p["cac"]
-        results[name] = {
-            "Usuários Ano 5": u5,
-            "Receita Líq. Ano 5 (R$)": rev5,
-            "EBITDA Ano 5 (R$)": eb5,
-            "Margem EBITDA %": eb5/rev5*100 if rev5 > 0 else 0,
-            "LTV/CAC": lc5,
-        }
-
-    colors_s = {
-        "Pessimista": CORAL,
-        "Base": PURPLE,
-        "Otimista": TEAL,
-    }
-
-    c1, c2, c3 = st.columns(3)
-    for col, (name, res) in zip([c1,c2,c3], results.items()):
-        with col:
-            st.markdown(f"### {name}")
-            for k, v in res.items():
-                if isinstance(v, float) and k.endswith("%"):
-                    metric(k, f"{v:.1f}%")
-                elif isinstance(v, float) and "LTV" in k:
-                    metric(k, f"{v:.1f}x")
-                elif isinstance(v, int):
-                    metric(k, f"{v:,.0f}")
-                else:
-                    metric(k, fmt_brl(v))
-                st.markdown("")
-
-    st.markdown("---")
-    st.subheader("Comparação de EBITDA Ano 5")
-    names = list(results.keys())
-    ebitdas = [results[n]["EBITDA Ano 5 (R$)"] / 1e6 for n in names]
-    fig = go.Figure(go.Bar(
-        x=names, y=ebitdas,
-        marker_color=[colors_s[n] for n in names],
-        text=[f"R$ {v:.1f}M" for v in ebitdas],
-        textposition="outside",
-    ))
-    fig.add_hline(y=0, line_dash="dot", line_color=GRAY)
-    fig.update_layout(height=320, yaxis_title="R$ milhões",
-                      margin=dict(t=30,b=10,l=10,r=10),
-                      plot_bgcolor="white", paper_bgcolor="white")
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.subheader("Premissas por Cenário")
-    df_prem = pd.DataFrame({
-        "Premissa": ["Adoção máx. Ano 5", "Take rate", "CAC (R$)", "Churn mensal"],
-        "Pessimista": ["5%", "20%", "R$ 300", "8%"],
-        "Base": [f"{adopt_y5*100:.0f}%", f"{take_rate*100:.0f}%",
-                 f"R$ {cac}", f"{churn_m*100:.0f}%"],
-        "Otimista": ["18%", "30%", "R$ 90", "3%"],
+def gen_volume_data():
+    weeks = [f"S{i}" for i in range(1, 13)]
+    return pd.DataFrame({
+        "Semana": weeks,
+        "Força": [random.randint(3, 8) for _ in weeks],
+        "Metcon": [random.randint(4, 9) for _ in weeks],
+        "Ginástica": [random.randint(1, 5) for _ in weeks],
     })
-    st.dataframe(df_prem.set_index("Premissa"), use_container_width=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-elif page == "Business Canvas":
+# LANDING
 # ══════════════════════════════════════════════════════════════════════════════
-    st.title("Business Model Canvas")
-
-    canvas = {
-        "Parceiros-Chave": [
-            "Boxes de CrossFit e estúdios funcionais",
-            "Empresas (RH / benefícios corporativos)",
-            "Influenciadores fitness",
-            "Provedores de pagamento",
-        ],
-        "Atividades-Chave": [
-            "Desenvolvimento e manutenção da plataforma",
-            "Parcerias com boxes",
-            "Captação de usuários",
-            "Gestão de pagamentos e billing",
-            "Quality assurance dos boxes",
-        ],
-        "Proposta de Valor (Usuário)": [
-            "Acesso flexível a múltiplos boxes",
-            "Variedade sem fidelização a um local",
-            "Experiência gamificada (PRs, rankings)",
-            f"Mensalidade de R$ {mensalidade}/mês",
-        ],
-        "Proposta de Valor (Box)": [
-            "Aumento de ocupação em horários ociosos",
-            "Aquisição de novos alunos sem marketing",
-            "Ferramentas de gestão (agenda, CRM)",
-            "Receita incremental sem custo fixo",
-        ],
-        "Segmentos": [
-            "Praticantes de CrossFit e funcional",
-            "Boxes independentes (440 no BR)",
-            "Pessoas que querem flexibilidade",
-            "Empresas com benefício de bem-estar",
-        ],
-        "Canais": [
-            "App mobile (canal principal)",
-            "Parceria com boxes (aquisição local)",
-            "Instagram e TikTok fitness",
-            "Vendas B2B diretas (empresas)",
-        ],
-        "Recursos-Chave": [
-            "Aplicativo e plataforma",
-            "Rede de boxes parceiros",
-            "Time de parcerias e suporte",
-            "Algoritmo de pricing e ocupação",
-        ],
-        "Fontes de Receita": [
-            f"Assinatura B2C: R$ {mensalidade}/mês ({take_rate*100:.0f}% take rate)",
-            f"SaaS para boxes: R$ {saas_price}/mês",
-            "Plano corporativo por funcionário",
-        ],
-        "Estrutura de Custos": [
-            "Desenvolvimento de software",
-            "Infraestrutura cloud e APIs",
-            "Marketing e CAC",
-            f"Time ({hc[3]} pessoas no Ano 3)",
-            "Suporte ao cliente e comercial",
-        ],
-    }
-
-    cols1 = st.columns(3)
-    cols2 = st.columns(3)
-    cols3 = st.columns(3)
-
-    for col, (title, items) in zip(cols1 + cols2 + cols3, canvas.items()):
-        with col:
-            st.markdown(f'<div class="section-title">{title}</div>', unsafe_allow_html=True)
-            for item in items:
-                st.markdown(f"- {item}")
-
-    st.markdown("---")
-    st.markdown(f"""
-    <div class="pitch-box">
-    <b>Diferencial central:</b> efeito de rede local — mais boxes parceiros geram mais opções para o atleta,
-    o que gera mais check-ins e mais receita para o box. O CrossPass só vence quando os dois lados vencem.
+if st.session_state.page == "landing":
+    st.markdown("""
+    <div class="hero">
+        <div class="hero-title">PERFORMANCE<br><span>SEM</span> TETO.</div>
+        <p class="hero-sub">A plataforma de performance para atletas de CrossFit. Tracking de PRs, análise de evolução, coaches de elite e gestão para boxes — tudo em um lugar.</p>
     </div>
     """, unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "Pitch":
-# ══════════════════════════════════════════════════════════════════════════════
-    st.title("Pitch & Textos")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown("""<div class="card" style="text-align:center;border-color:#2a2060">
+            <div style="font-size:36px;margin-bottom:.5rem">📈</div>
+            <div style="font-family:'Bebas Neue';font-size:18px;color:#fafaf8;margin-bottom:.3rem">Tracking de Performance</div>
+            <div style="font-size:12px;color:#888">PRs, evolução, análise de volume e comparação com atletas do mesmo nível</div>
+        </div>""", unsafe_allow_html=True)
+    with c2:
+        st.markdown("""<div class="card" style="text-align:center;border-color:#2a2060">
+            <div style="font-size:36px;margin-bottom:.5rem">🏋️</div>
+            <div style="font-family:'Bebas Neue';font-size:18px;color:#fafaf8;margin-bottom:.3rem">Coaches de Elite</div>
+            <div style="font-size:12px;color:#888">Marketplace com coaches certificados e programas de treinamento personalizados</div>
+        </div>""", unsafe_allow_html=True)
+    with c3:
+        st.markdown("""<div class="card" style="text-align:center;border-color:#2a2060">
+            <div style="font-size:36px;margin-bottom:.5rem">🏢</div>
+            <div style="font-family:'Bebas Neue';font-size:18px;color:#fafaf8;margin-bottom:.3rem">SaaS para Boxes</div>
+            <div style="font-size:12px;color:#888">Gestão de turmas, analytics de alunos, CRM e retenção — tudo integrado</div>
+        </div>""", unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["Pitch 2 minutos", "Análise Completa", "Exportar"])
+    st.markdown("---")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1: st.markdown("<div class='stat-box'><div class='stat-num'>440</div><div class='stat-lbl'>Boxes parceiros</div></div>", unsafe_allow_html=True)
+    with c2: st.markdown("<div class='stat-box'><div class='stat-num'>12k</div><div class='stat-lbl'>Atletas ativos</div></div>", unsafe_allow_html=True)
+    with c3: st.markdown("<div class='stat-box'><div class='stat-num'>89</div><div class='stat-lbl'>Coaches certificados</div></div>", unsafe_allow_html=True)
+    with c4: st.markdown("<div class='stat-box'><div class='stat-num'>4.9★</div><div class='stat-lbl'>Avaliação média</div></div>", unsafe_allow_html=True)
 
-    with tab1:
-        st.subheader("Pitch de 2 minutos")
+    st.markdown("")
+    c1, c2, c3 = st.columns([1,2,1])
+    with c2:
+        st.markdown("### Escolha como entrar")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🏋️ Sou atleta", use_container_width=True, type="primary"):
+                go("signup_athlete")
+        with col2:
+            if st.button("🏢 Tenho um box", use_container_width=True):
+                go("signup_box")
+        st.markdown("")
+        if st.button("👤 Entrar com demo", use_container_width=True):
+            st.session_state.user = {"name":"Rafael Santos","city":"São Paulo","plan":"Pro","tipo":"atleta","box":"CrossFit Itaim"}
+            go("dashboard")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SIGNUP ATHLETE
+# ══════════════════════════════════════════════════════════════════════════════
+elif st.session_state.page == "signup_athlete":
+    c1, c2, c3 = st.columns([1,2,1])
+    with c2:
+        st.markdown("### 🏋️ Cadastro do Atleta")
+        st.caption("7 dias grátis em qualquer plano")
+
+        with st.form("f_athlete"):
+            name  = st.text_input("Nome completo", placeholder="Rafael Santos")
+            email = st.text_input("E-mail", placeholder="rafael@email.com")
+            senha = st.text_input("Senha", type="password")
+            city  = st.selectbox("Cidade", ["São Paulo","Rio de Janeiro","Belo Horizonte","Curitiba","Porto Alegre"])
+            box   = st.text_input("Box que você treina (opcional)", placeholder="CrossFit Itaim")
+            nivel = st.select_slider("Nível", ["Iniciante","Intermediário","Avançado","Competidor"])
+
+            st.markdown("**Escolha seu plano**")
+            plan = st.radio("", [
+                "Free — Gratuito (log de treinos e PRs básicos)",
+                "Athlete — R$ 49/mês (analytics + ranking + comunidade)",
+                "Pro — R$ 99/mês (coaching remoto + análise avançada + prioridade)",
+            ], index=1)
+
+            ok = st.form_submit_button("Criar conta →", use_container_width=True, type="primary")
+
+        if ok:
+            if not name:
+                st.error("Digite seu nome.")
+            else:
+                st.session_state.user = {
+                    "name": name, "city": city, "plan": plan.split("—")[0].strip(),
+                    "tipo": "atleta", "nivel": nivel, "box": box or "Sem box fixo"
+                }
+                st.success(f"🎉 Bem-vindo, {name.split()[0]}!")
+                st.balloons()
+                go("dashboard")
+
+        if st.button("← Voltar"):
+            go("landing")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SIGNUP BOX
+# ══════════════════════════════════════════════════════════════════════════════
+elif st.session_state.page == "signup_box":
+    c1, c2, c3 = st.columns([1,2,1])
+    with c2:
+        st.markdown("### 🏢 Cadastro do Box")
+        st.caption("30 dias grátis, sem cartão de crédito")
+
+        with st.form("f_box"):
+            box_name  = st.text_input("Nome do box", placeholder="CrossFit Meu Box")
+            owner     = st.text_input("Seu nome", placeholder="João Silva")
+            email     = st.text_input("E-mail", placeholder="joao@meubox.com.br")
+            city      = st.selectbox("Cidade", ["São Paulo","Rio de Janeiro","Belo Horizonte","Curitiba","Porto Alegre"])
+            alunos    = st.number_input("Quantos alunos ativos?", 10, 500, 80)
+
+            st.markdown("**Plano SaaS**")
+            plan = st.radio("", [
+                "Starter — R$ 199/mês (gestão básica, até 80 alunos)",
+                "Growth — R$ 349/mês (analytics + CRM + até 200 alunos)",
+                "Elite — R$ 599/mês (ilimitado + API + suporte dedicado)",
+            ], index=1)
+
+            ok = st.form_submit_button("Começar grátis →", use_container_width=True, type="primary")
+
+        if ok:
+            if not box_name:
+                st.error("Digite o nome do box.")
+            else:
+                st.session_state.user = {
+                    "name": owner, "box": box_name, "city": city,
+                    "plan": plan.split("—")[0].strip(), "tipo": "box", "alunos": alunos
+                }
+                st.success(f"🎉 {box_name} cadastrado!")
+                st.balloons()
+                go("box_dashboard")
+
+        if st.button("← Voltar"):
+            go("landing")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ATHLETE DASHBOARD
+# ══════════════════════════════════════════════════════════════════════════════
+elif st.session_state.page == "dashboard":
+    user = st.session_state.user or {"name":"Rafael Santos","city":"SP","plan":"Pro","tipo":"atleta","box":"CrossFit Itaim"}
+    first = user["name"].split()[0]
+
+    # Sidebar nav
+    with st.sidebar:
+        st.markdown(f"### ⚡ {first}")
+        st.caption(f"📍 {user.get('city','')} · {user.get('plan','Free')}")
+        st.markdown("---")
+        nav = st.radio("", ["🏠 Dashboard","📊 Performance","🏋️ WOD Log","👨‍🏫 Coaches","🏆 Ranking","⚙️ Configurações"], label_visibility="collapsed")
+        st.markdown("---")
+        if st.button("← Sair", use_container_width=True):
+            go("landing")
+
+    section = nav.split(" ",1)[1] if " " in nav else nav
+
+    # ── DASHBOARD ──
+    if section == "Dashboard":
+        st.markdown(f"## Olá, {first} 👋")
+        st.caption(f"📍 {user.get('box','Sem box')} · ⚡ Plano {user.get('plan','Free')}")
+
         st.markdown(f"""
-        <div class="pitch-box">
-        O Brasil é o segundo país com mais boxes de CrossFit no mundo, com {n_boxes} unidades ativas
-        e cerca de {tam:,.0f} praticantes. É uma comunidade apaixonada, que paga bem e treina com frequência.
-        Mas tem um problema que ninguém resolveu ainda: falta flexibilidade. O atleta que viaja, que mora longe
-        do trabalho ou que quer treinar em outro bairro não tem opção, ou falta ou paga duas mensalidades.
-        <br><br>
-        O CrossPass resolve isso. É um marketplace de assinatura mensal de R$ {mensalidade} que dá acesso
-        a múltiplos boxes de CrossFit. O usuário assina uma vez e treina onde quiser, quando quiser.
-        Para o box, é receita incremental em horário ocioso, sem custo de marketing próprio.
-        <br><br>
-        O modelo financeiro é saudável. Retemos {take_rate*100:.0f}% de cada assinatura e repassamos
-        {(1-take_rate)*100:.0f}% aos boxes por check-in. Com CAC de R$ {cac} e churn mensal de {churn_m*100:.0f}%,
-        o LTV/CAC chega a {ltv_cac:.1f}x, bem acima do mínimo de 3x que o mercado aceita.
-        A projeção é atingir break-even no {"Ano " + str(bey) if bey else "Ano 3–4"} com capital
-        necessário de aproximadamente {fmt_brl(max_burn)}.
-        <br><br>
-        O principal concorrente é o ClassPass, que é genérico e não tem nenhuma feature para a comunidade
-        CrossFit. Esse é nosso diferencial: gamificação, PRs, rankings, tudo pensado para quem respira CrossFit.
-        <br><br>
-        A estratégia de lançamento é hiperlocal. Começamos em São Paulo, fechamos 20 boxes parceiros antes
-        de abrir para usuários, e crescemos cidade por cidade. O próprio coach do box é nosso canal de
-        aquisição, o que mantém o CAC baixo.
-        <br><br>
-        O mercado é de nicho, mas é um nicho com identidade, dinheiro e problema real. E ninguém está resolvendo direito.
+        <div class="streak-bar">
+            <div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:3px">Sequência atual</div>
+            <div style="font-family:'Bebas Neue';font-size:36px;color:white">🔥 14 dias</div></div>
+            <div style="text-align:right"><div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:3px">Este mês</div>
+            <div style="font-family:'Bebas Neue';font-size:36px;color:white">{st.session_state.checkins}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.6)">treinos</div></div>
+            <div style="text-align:right"><div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:3px">Ranking SP</div>
+            <div style="font-family:'Bebas Neue';font-size:36px;color:white">#38</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.6)">de 2.847</div></div>
         </div>
         """, unsafe_allow_html=True)
 
-    with tab2:
-        sections = {
-            "Segmentação do público-alvo": f"""
-O CrossPass atende três segmentos. O principal é o praticante de CrossFit urbano entre 25 e 40 anos
-que paga em torno de R$ {mensalidade}/mês e valoriza performance e variedade. Dentro desse grupo,
-o perfil mais valioso é o nômade urbano: profissional que trabalha longe de casa, viaja com frequência
-ou enjoa de treinar sempre no mesmo lugar.
-
-O segundo segmento são os boxes independentes com ocupação abaixo de 70%, que têm horários ociosos
-e carecem de ferramentas de gestão. O terceiro, endereçável a partir do Ano 2, são empresas que
-oferecem benefício de bem-estar e buscam alternativas ao Gympass para funcionários com perfil de alta performance.
-""",
-            "Dimensionamento do público-alvo": f"""
-Com base em contagem direta do diretório crossfit.com/gyms/brazil em março de 2026, o Brasil tem
-{n_boxes} boxes ativos. Usando a premissa de {alunos_box} alunos por box, o mercado total é de
-aproximadamente {tam:,.0f} praticantes. O mercado endereçável se concentra nas cinco maiores capitais,
-que respondem por 63% dos boxes, cerca de {int(tam*0.63):,.0f} praticantes.
-
-A meta é atingir {adopt_y5*100:.0f}% desse universo em 5 anos, aproximadamente {users[5]:,.0f}
-usuários pagantes, com EBITDA positivo a partir do {"Ano " + str(bey) if bey else "Ano 3–4"}.
-""",
-            "Precificação": f"""
-O CrossPass cobra R$ {mensalidade}/mês, na paridade com a mensalidade média de um box nas capitais.
-O argumento de venda é conveniência, não preço. Dos R$ {mensalidade}, {take_rate*100:.0f}% ficam com
-o CrossPass e {(1-take_rate)*100:.0f}% são repassados aos boxes por check-in.
-
-Existe também um plano SaaS de R$ {saas_price}/mês para boxes com mais de 80 alunos.
-Com churn de {churn_m*100:.0f}% e CAC de R$ {cac}, o LTV/CAC é de {ltv_cac:.1f}x.
-""",
-        }
-
-        for title, text in sections.items():
-            st.markdown(f"### {title}")
-            st.markdown(f'<div class="pitch-box">{text}</div>', unsafe_allow_html=True)
-            st.markdown("")
-
-    with tab3:
-        st.subheader("Exportar dados do modelo")
-
-        df_export = pd.DataFrame({
-            "Ano": anos,
-            "Usuários": users,
-            "Receita Bruta B2C (R$)": rev_b2c,
-            "Receita SaaS (R$)": rev_saas,
-            "Receita Liquida (R$)": rev_net,
-            "EBITDA (R$)": ebitda,
-            "Caixa Final (R$)": cash,
-            "FCFF (R$)": fcff,
-        })
-
-        csv = df_export.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            label="Baixar CSV com projeções",
-            data=csv,
-            file_name="crosspass_projecoes.csv",
-            mime="text/csv",
-        )
+        c1, c2, c3, c4 = st.columns(4)
+        metrics = [
+            ("PRs este mês","4","↑ vs mês anterior"),
+            ("Volume semanal","18 treinos","últimas 4 semanas"),
+            ("Score de performance","147","↑ 8pts este mês"),
+            ("Boxes visitados","3","SP + RJ"),
+        ]
+        for col, (lbl, val, sub) in zip([c1,c2,c3,c4], metrics):
+            with col:
+                st.markdown(f"<div class='stat-box'><div class='stat-num'>{val}</div><div class='stat-lbl'>{lbl}</div><div class='stat-sub'>{sub}</div></div>", unsafe_allow_html=True)
 
         st.markdown("---")
-        st.subheader("Resumo das premissas atuais")
-        df_prem = pd.DataFrame({
-            "Premissa": [
-                "Boxes ativos", "Alunos por box", "TAM",
-                "Mensalidade", "Take rate", "Adoção Ano 5",
-                "SaaS/box", "CAC", "Churn mensal",
-                "WACC", "g perpet.", "Seed", "Série A",
-            ],
-            "Valor": [
-                n_boxes, alunos_box, tam,
-                f"R$ {mensalidade}", f"{take_rate*100:.0f}%", f"{adopt_y5*100:.0f}%",
-                f"R$ {saas_price}", f"R$ {cac}", f"{churn_m*100:.0f}%",
-                f"{wacc*100:.0f}%", f"{g_per*100:.0f}%",
-                fmt_brl(seed), fmt_brl(serie_a),
+        col1, col2 = st.columns([3,2])
+
+        with col1:
+            st.markdown("#### Evolução de Performance (90 dias)")
+            df = gen_performance_data()
+            fig = go.Figure()
+            fig.add_scatter(x=df["date"], y=df["score"], mode="lines",
+                          line=dict(color="#534AB7", width=2.5),
+                          fill="tozeroy", fillcolor="rgba(83,74,183,0.08)")
+            fig.update_layout(height=240, margin=dict(t=10,b=10,l=10,r=10),
+                            plot_bgcolor="#0d0d0d", paper_bgcolor="#0d0d0d",
+                            xaxis=dict(showgrid=False, color="#444"),
+                            yaxis=dict(showgrid=True, gridcolor="#1a1a1a", color="#444"),
+                            font=dict(color="#888"))
+            st.plotly_chart(fig, use_container_width=True)
+
+        with col2:
+            st.markdown("#### WOD de Hoje")
+            st.markdown(f"""
+            <div class="wod-box">
+                <div class="wod-title">{WOD_TODAY['name']}</div>
+                {''.join([f'<div style="font-size:13px;color:#ccc;margin-bottom:4px">• {m}</div>' for m in WOD_TODAY['movements']])}
+                <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #2a2060">
+                    <div style="font-size:10px;color:#534AB7;font-weight:600;text-transform:uppercase;margin-bottom:4px">💡 Dica do Coach</div>
+                    <div style="font-size:11px;color:#aaa">{WOD_TODAY['coach_tip']}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("📝 Registrar resultado", use_container_width=True, type="primary"):
+                go("log_wod")
+
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("#### Últimos PRs")
+            for move, pr in list(st.session_state.prs.items())[:4]:
+                unit = pr["unit"]
+                val_str = f"{pr['val']} {unit}" if unit not in ["tempo","rounds"] else pr["val"] + (" rds" if unit=="rounds" else "")
+                st.markdown(f"""
+                <div class="pr-item">
+                    <div><div class="pr-move">{move}</div><div class="pr-date">{pr['date']}</div></div>
+                    <div style="text-align:right"><div class="pr-val">{val_str}</div></div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown("#### Coaches recomendados")
+            for c in COACHES[:2]:
+                st.markdown(f"""
+                <div class="coach-card">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                        <div style="width:38px;height:38px;border-radius:50%;background:#534AB7;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">{c['avatar']}</div>
+                        <div><div class="coach-name">{c['name']}</div><div class="coach-spec">{c['spec']}</div></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div style="font-size:11px;color:#888">⭐ {c['rating']} · {c['reviews']} avaliações</div>
+                        <div class="coach-price">R$ {c['price']}<span style="font-size:12px;color:#888">/mês</span></div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+    # ── PERFORMANCE ──
+    elif section == "Performance":
+        st.markdown("## 📊 Análise de Performance")
+
+        tab1, tab2, tab3 = st.tabs(["PRs & Evolução", "Volume de Treino", "Comparação"])
+
+        with tab1:
+            st.markdown("#### Todos os recordes pessoais")
+            col1, col2 = st.columns(2)
+            for i, (move, pr) in enumerate(st.session_state.prs.items()):
+                with (col1 if i % 2 == 0 else col2):
+                    unit = pr["unit"]
+                    if unit == "kg":
+                        diff = float(pr["val"]) - float(pr["prev"])
+                        diff_str = f"+{diff:.1f}kg"
+                    elif unit == "rounds":
+                        diff = int(pr["val"].replace(" rds","")) - int(pr["prev"].replace(" rds",""))
+                        diff_str = f"+{diff} rds"
+                    else:
+                        diff_str = "↑ PR"
+                    st.markdown(f"""
+                    <div class="pr-item" style="margin-bottom:8px">
+                        <div>
+                            <div class="pr-move">{move}</div>
+                            <div class="pr-date">{pr['date']} · anterior: {pr['prev']} {unit if unit not in ['tempo','rounds'] else ''}</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div class="pr-val">{pr['val']} {unit if unit not in ['tempo','rounds'] else ''}</div>
+                            <div style="font-size:10px;color:#1D9E75">{diff_str}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            st.markdown("#### Adicionar novo PR")
+            with st.form("new_pr"):
+                c1, c2, c3, c4 = st.columns(4)
+                with c1: move_new = st.text_input("Movimento", placeholder="Fran, Back Squat...")
+                with c2: val_new  = st.text_input("Resultado", placeholder="4:32 ou 95")
+                with c3: unit_new = st.selectbox("Unidade", ["kg","tempo","rounds","reps","m"])
+                with c4: st.markdown(""); st.markdown("")
+                ok = st.form_submit_button("✅ Salvar PR", use_container_width=True, type="primary")
+            if ok and move_new and val_new:
+                prev = st.session_state.prs.get(move_new, {}).get("val", "—")
+                st.session_state.prs[move_new] = {"val": val_new, "prev": prev, "date": "agora", "unit": unit_new}
+                st.success(f"🏆 PR em {move_new} registrado!")
+                st.rerun()
+
+        with tab2:
+            st.markdown("#### Volume por semana (últimas 12 semanas)")
+            df_vol = gen_volume_data()
+            fig = go.Figure()
+            for col, color in [("Força","#534AB7"),("Metcon","#1D9E75"),("Ginástica","#D85A30")]:
+                fig.add_bar(name=col, x=df_vol["Semana"], y=df_vol[col], marker_color=color, opacity=0.85)
+            fig.update_layout(barmode="stack", height=300, margin=dict(t=10,b=10,l=10,r=10),
+                            plot_bgcolor="#0d0d0d", paper_bgcolor="#0d0d0d",
+                            legend=dict(orientation="h", y=1.1, font=dict(color="#888")),
+                            xaxis=dict(color="#444"), yaxis=dict(color="#444", gridcolor="#1a1a1a"))
+            st.plotly_chart(fig, use_container_width=True)
+
+            c1,c2,c3 = st.columns(3)
+            with c1: st.markdown("<div class='stat-box'><div class='stat-num'>4.5</div><div class='stat-lbl'>Treinos/semana</div><div class='stat-sub'>média</div></div>", unsafe_allow_html=True)
+            with c2: st.markdown("<div class='stat-box'><div class='stat-num'>62%</div><div class='stat-lbl'>Taxa de Força</div><div class='stat-sub'>vs 38% Metcon</div></div>", unsafe_allow_html=True)
+            with c3: st.markdown("<div class='stat-box'><div class='stat-num'>14</div><div class='stat-lbl'>Sequência atual</div><div class='stat-sub'>dias consecutivos</div></div>", unsafe_allow_html=True)
+
+        with tab3:
+            st.markdown("#### Como você se compara")
+            categories = ["Força","Ginástica","Endurance","Técnica","Consistência"]
+            user_vals  = [78, 65, 82, 71, 90]
+            avg_vals   = [65, 60, 68, 63, 72]
+
+            fig = go.Figure()
+            fig.add_scatterpolar(r=user_vals+[user_vals[0]], theta=categories+[categories[0]],
+                fill='toself', name='Você', line_color='#534AB7', fillcolor='rgba(83,74,183,0.2)')
+            fig.add_scatterpolar(r=avg_vals+[avg_vals[0]], theta=categories+[categories[0]],
+                fill='toself', name='Média SP', line_color='#1D9E75', fillcolor='rgba(29,158,117,0.1)')
+            fig.update_layout(polar=dict(bgcolor='#0d0d0d',
+                radialaxis=dict(visible=True, range=[0,100], color="#444", gridcolor="#222"),
+                angularaxis=dict(color="#888")),
+                showlegend=True, height=350, margin=dict(t=20,b=20,l=20,r=20),
+                paper_bgcolor="#0d0d0d", legend=dict(font=dict(color="#888")))
+            st.plotly_chart(fig, use_container_width=True)
+
+    # ── WOD LOG ──
+    elif section == "WOD Log":
+        st.markdown("## 🏋️ Registrar Treino")
+
+        with st.form("wod_log"):
+            c1, c2 = st.columns(2)
+            with c1:
+                tipo = st.selectbox("Tipo de treino", ["WOD do box","WOD personalizado","Força/Ciclo","Ginástica","Endurance"])
+                wod_name = st.text_input("Nome do WOD", placeholder="Fran, Cindy, ou descreva...")
+                score = st.text_input("Resultado / Score", placeholder="4:32 ou 15 rounds ou 95kg")
+            with c2:
+                data_treino = st.date_input("Data", datetime.now())
+                rx = st.checkbox("RX (sem escalonamento)")
+                feelings = st.select_slider("Como foi?", ["😫 Difícil","😤 Puxado","😐 Ok","😊 Bom","🔥 Ótimo"], value="😊 Bom")
+
+            notes = st.text_area("Observações / Anotações", placeholder="Técnica, sensações, o que melhorar...", height=80)
+            ok = st.form_submit_button("✅ Salvar treino", use_container_width=True, type="primary")
+
+        if ok and wod_name:
+            entry = {"tipo":tipo,"nome":wod_name,"score":score,"data":str(data_treino),"rx":rx,"feelings":feelings,"notes":notes}
+            st.session_state.log_entries.insert(0, entry)
+            st.session_state.checkins += 1
+            st.success(f"💪 Treino '{wod_name}' registrado!")
+            st.balloons()
+
+        if st.session_state.log_entries:
+            st.markdown("#### Histórico recente")
+            for e in st.session_state.log_entries[:10]:
+                rx_tag = badge("RX","teal") if e["rx"] else badge("Scaled","amber")
+                st.markdown(f"""
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <div style="font-size:14px;font-weight:600;color:#fafaf8">{e['nome']}</div>
+                            <div style="font-size:11px;color:#888;margin-top:2px">{e['data']} · {e['tipo']} · {e['feelings']}</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-family:'Bebas Neue';font-size:22px;color:#1D9E75">{e['score'] or '—'}</div>
+                            <div>{rx_tag}</div>
+                        </div>
+                    </div>
+                    {f'<div style="font-size:11px;color:#666;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">{e["notes"]}</div>' if e["notes"] else ''}
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("Nenhum treino registrado ainda. Comece agora!")
+
+    # ── COACHES ──
+    elif section == "Coaches":
+        st.markdown("## 👨‍🏫 Coaches & Programas")
+
+        tab1, tab2 = st.tabs(["Coaches 1:1", "Programas Online"])
+
+        with tab1:
+            c1, c2 = st.columns([2,1])
+            with c1: q = st.text_input("", placeholder="Buscar por especialidade...", label_visibility="collapsed")
+            with c2: spec_filter = st.selectbox("", ["Todos","Competição","Força","Iniciantes","Mobilidade","Endurance"], label_visibility="collapsed")
+
+            coaches = COACHES.copy()
+            if spec_filter != "Todos":
+                coaches = [c for c in coaches if any(spec_filter.lower() in t.lower() for t in c["tags"])]
+            if q:
+                coaches = [c for c in coaches if q.lower() in c["name"].lower() or q.lower() in c["spec"].lower()]
+
+            for c in coaches:
+                tags_html = "".join([badge(t) for t in c["tags"]])
+                col1, col2 = st.columns([3,1])
+                with col1:
+                    st.markdown(f"""
+                    <div class="coach-card">
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+                            <div style="width:48px;height:48px;border-radius:50%;background:#534AB7;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;border:2px solid #3C3489">{c['avatar']}</div>
+                            <div>
+                                <div class="coach-name">{c['name']}</div>
+                                <div class="coach-spec">{c['spec']} · {c['cert']}</div>
+                                <div style="font-size:11px;color:#f59e0b">{'★'*int(c['rating'])} {c['rating']} · {c['reviews']} avaliações · {c['students']} alunos ativos</div>
+                            </div>
+                        </div>
+                        <div style="font-size:12px;color:#bbb;margin-bottom:8px">{c['bio']}</div>
+                        <div>{tags_html}</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+                            <div class="coach-price">R$ {c['price']}<span style="font-size:12px;color:#888">/mês</span></div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with col2:
+                    st.markdown("")
+                    st.markdown("")
+                    if st.button("Contratar", key=f"hire_{c['id']}", use_container_width=True, type="primary"):
+                        st.success(f"✅ Solicitação enviada para {c['name']}!")
+                    if st.button("Ver perfil", key=f"view_{c['id']}", use_container_width=True):
+                        st.info(f"Perfil completo de {c['name']} — em breve!")
+
+        with tab2:
+            for p in PROGRAMS:
+                col1, col2 = st.columns([3,1])
+                with col1:
+                    tags_html = "".join([badge(t) for t in p["tags"]])
+                    st.markdown(f"""
+                    <div class="card">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+                            <div>
+                                <div style="font-size:15px;font-weight:600;color:#fafaf8">{p['name']}</div>
+                                <div style="font-size:11px;color:#888;margin-top:2px">por {p['coach']} · {p['duration']} · {p['level']}</div>
+                            </div>
+                            <div style="font-family:'Bebas Neue';font-size:22px;color:#534AB7">R$ {p['price']}</div>
+                        </div>
+                        <div style="font-size:12px;color:#bbb;margin-bottom:8px">{p['description']}</div>
+                        <div>{tags_html}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with col2:
+                    st.markdown("")
+                    st.markdown("")
+                    if st.button("Comprar", key=f"buy_{p['name']}", use_container_width=True, type="primary"):
+                        st.success(f"✅ {p['name']} adicionado!")
+
+    # ── RANKING ──
+    elif section == "Ranking":
+        st.markdown("## 🏆 Ranking & Comunidade")
+
+        tab1, tab2 = st.tabs(["Ranking Geral", "Desafios"])
+
+        with tab1:
+            c1, c2 = st.columns([2,1])
+            with c1: ranking_city = st.selectbox("", ["São Paulo","Rio de Janeiro","Belo Horizonte","Nacional"], label_visibility="collapsed")
+            with c2: ranking_cat = st.selectbox("", ["Geral","Força","Metcon","Consistência"], label_visibility="collapsed")
+
+            ranking_data = [
+                {"pos":1,"name":"André Melo","box":"CF Itaim","score":3840,"badge":"🥇","streak":21},
+                {"pos":2,"name":"Camila Freitas","box":"CF Pinheiros","score":3620,"badge":"🥈","streak":18},
+                {"pos":3,"name":"Thiago Ramos","box":"CF Moema","score":3290,"badge":"🥉","streak":14},
+                {"pos":4,"name":"Juliana Costa","box":"CF Itaim","score":2980,"badge":"","streak":11},
+                {"pos":5,"name":"Pedro Alves","box":"CF Saúde","score":2750,"badge":"","streak":9},
+                {"pos":6,"name":"Marina Lima","box":"CF Pinheiros","score":2640,"badge":"","streak":7},
+                {"pos":7,"name":"Lucas Ferreira","box":"CF Moema","score":2510,"badge":"","streak":12},
             ]
+            for r in ranking_data:
+                pos_icon = r["badge"] if r["badge"] else f"#{r['pos']}"
+                st.markdown(f"""
+                <div class="rank-item">
+                    <div style="font-family:'Bebas Neue';font-size:20px;width:32px;text-align:center;color:{'#f59e0b' if r['pos']==1 else '#aaa' if r['pos']==2 else '#cd7c4f' if r['pos']==3 else '#555'}">{pos_icon}</div>
+                    <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fafaf8">{r['name']}</div><div style="font-size:10px;color:#888">{r['box']} · 🔥 {r['streak']} dias</div></div>
+                    <div style="font-family:'Bebas Neue';font-size:18px;color:#534AB7">{r['score']:,}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            user = st.session_state.user or {}
+            st.markdown(f"""
+            <div style="margin-top:8px;padding:12px 14px;background:rgba(83,74,183,.15);border-radius:10px;border:1px solid #534AB7;display:flex;align-items:center;gap:12px">
+                <div style="font-family:'Bebas Neue';font-size:20px;width:32px;text-align:center;color:#534AB7">#38</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fafaf8">{user.get('name','Rafael Santos')} — você</div><div style="font-size:10px;color:#888">{user.get('box','CF Itaim')} · 🔥 14 dias</div></div>
+                <div style="font-family:'Bebas Neue';font-size:18px;color:#534AB7">1.247</div>
+            </div>
+            <p style="font-size:10px;color:#444;text-align:center;margin-top:6px">Pontos = treinos × 80 + PRs × 120 + consistência × 50</p>
+            """, unsafe_allow_html=True)
+
+        with tab2:
+            st.markdown("#### Desafios ativos")
+            challenges = [
+                {"name":"Outubro de Força","desc":"Complete 20 treinos de força em outubro","progress":14,"total":20,"reward":"Badge + 500pts","ends":"15 dias"},
+                {"name":"PR Challenge","desc":"Bata 5 PRs em qualquer movimento este mês","progress":4,"total":5,"reward":"1 mês de Coach grátis","ends":"8 dias"},
+                {"name":"Box Hopper","desc":"Treine em 4 boxes diferentes este mês","progress":3,"total":4,"reward":"Badge especial","ends":"22 dias"},
+            ]
+            for ch in challenges:
+                pct = ch["progress"]/ch["total"]
+                st.markdown(f"""
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+                        <div><div style="font-size:14px;font-weight:600;color:#fafaf8">{ch['name']}</div>
+                        <div style="font-size:11px;color:#888;margin-top:2px">{ch['desc']}</div></div>
+                        <div style="text-align:right"><div style="font-size:10px;color:#888">Termina em</div><div style="font-size:13px;font-weight:600;color:#D85A30">{ch['ends']}</div></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:4px">
+                        <span>Progresso: {ch['progress']}/{ch['total']}</span>
+                        <span>🎁 {ch['reward']}</span>
+                    </div>
+                    <div style="height:6px;background:#1a1a1a;border-radius:100px;overflow:hidden">
+                        <div style="height:100%;width:{pct*100:.0f}%;background:{'#1D9E75' if pct >= 1 else '#534AB7'};border-radius:100px"></div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+    # ── SETTINGS ──
+    elif section == "Configurações":
+        user = st.session_state.user or {}
+        st.markdown("## ⚙️ Configurações")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("#### Perfil")
+            st.text_input("Nome", value=user.get("name",""))
+            st.text_input("E-mail")
+            st.selectbox("Cidade", ["São Paulo","Rio de Janeiro","Belo Horizonte","Curitiba"])
+            st.select_slider("Nível", ["Iniciante","Intermediário","Avançado","Competidor"], value="Avançado")
+        with c2:
+            st.markdown("#### Plano atual")
+            st.markdown(f"""
+            <div class="card" style="border-color:#534AB7">
+                <div style="font-family:'Bebas Neue';font-size:24px;color:#534AB7">Plano {user.get('plan','Pro')}</div>
+                <div style="font-size:12px;color:#888;margin:.5rem 0">Próxima cobrança: 15 de novembro</div>
+                {'<div style="font-size:12px;color:#1D9E75">✓ Analytics avançado</div><div style="font-size:12px;color:#1D9E75">✓ Ranking nacional</div><div style="font-size:12px;color:#1D9E75">✓ Coaching remoto</div>' if user.get('plan')=='Pro' else ''}
+            </div>
+            """, unsafe_allow_html=True)
+            st.button("Trocar de plano", use_container_width=True)
+            st.button("Cancelar assinatura", use_container_width=True)
+        if st.button("Salvar alterações", type="primary"):
+            st.success("✅ Perfil atualizado!")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# LOG WOD (modal-like)
+# ══════════════════════════════════════════════════════════════════════════════
+elif st.session_state.page == "log_wod":
+    st.markdown("## 📝 Registrar WOD de Hoje")
+    st.markdown(f"""
+    <div class="wod-box">
+        <div class="wod-title">{WOD_TODAY['name']}</div>
+        {''.join([f'<div style="font-size:13px;color:#ccc;margin-bottom:4px">• {m}</div>' for m in WOD_TODAY['movements']])}
+    </div>
+    """, unsafe_allow_html=True)
+
+    with st.form("log_today"):
+        c1, c2 = st.columns(2)
+        with c1:
+            score = st.text_input("Seu resultado (rounds + reps)", placeholder="ex: 15 rounds + 3 reps")
+            rx = st.checkbox("RX completo")
+        with c2:
+            feelings = st.select_slider("Como foi?", ["😫","😤","😐","😊","🔥"], value="😊")
+            notes = st.text_input("Observações", placeholder="O que funcionou? O que melhorar?")
+        ok = st.form_submit_button("✅ Salvar", use_container_width=True, type="primary")
+
+    if ok:
+        entry = {"tipo":"WOD do box","nome":WOD_TODAY["name"],"score":score,"data":str(datetime.now().date()),"rx":rx,"feelings":feelings,"notes":notes}
+        st.session_state.log_entries.insert(0, entry)
+        st.session_state.checkins += 1
+        st.success("💪 Treino registrado!")
+        go("dashboard")
+
+    if st.button("← Voltar ao dashboard"):
+        go("dashboard")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BOX DASHBOARD (SaaS)
+# ══════════════════════════════════════════════════════════════════════════════
+elif st.session_state.page == "box_dashboard":
+    user = st.session_state.user or {"name":"João","box":"CrossFit Demo","plan":"Growth","alunos":80}
+
+    with st.sidebar:
+        st.markdown(f"### 🏢 {user.get('box','Box')}")
+        st.caption(f"Plano {user.get('plan','Growth')}")
+        st.markdown("---")
+        nav = st.radio("", ["📊 Visão Geral","👥 Alunos","📅 Turmas","💰 Financeiro","📈 Retenção"], label_visibility="collapsed")
+        st.markdown("---")
+        if st.button("← Sair"):
+            go("landing")
+
+    section = nav.split(" ",1)[1]
+
+    if section == "Visão Geral":
+        st.markdown(f"## 🏢 {user.get('box','Meu Box')}")
+        st.caption(f"Plano {user.get('plan','Growth')} · {user.get('city','SP')}")
+
+        alunos = user.get("alunos", 80)
+        c1,c2,c3,c4 = st.columns(4)
+        with c1: st.markdown(f"<div class='stat-box'><div class='stat-num'>{alunos}</div><div class='stat-lbl'>Alunos ativos</div><div class='stat-sub'>↑ 3 este mês</div></div>", unsafe_allow_html=True)
+        with c2: st.markdown(f"<div class='stat-box'><div class='stat-num'>R$ {alunos*300//1000}k</div><div class='stat-lbl'>Receita mensal</div><div class='stat-sub'>↑ 5% vs mês ant.</div></div>", unsafe_allow_html=True)
+        with c3: st.markdown("<div class='stat-box'><div class='stat-num'>4.2%</div><div class='stat-lbl'>Churn mensal</div><div class='stat-sub'>↓ 0.8% este mês</div></div>", unsafe_allow_html=True)
+        with c4: st.markdown("<div class='stat-box'><div class='stat-num'>68%</div><div class='stat-lbl'>Ocupação média</div><div class='stat-sub'>↑ vs 63% anterior</div></div>", unsafe_allow_html=True)
+
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("#### Alunos por turma (hoje)")
+            turmas = {"06:00":8,"07:00":12,"08:00":7,"12:00":5,"18:00":14,"19:00":15,"20:00":11}
+            df_t = pd.DataFrame({"Horário":list(turmas.keys()),"Alunos":list(turmas.values())})
+            fig = px.bar(df_t, x="Horário", y="Alunos", color_discrete_sequence=["#534AB7"])
+            fig.update_layout(height=250, margin=dict(t=10,b=10,l=10,r=10),
+                            plot_bgcolor="#0d0d0d", paper_bgcolor="#0d0d0d",
+                            xaxis=dict(color="#444"), yaxis=dict(color="#444", gridcolor="#1a1a1a"))
+            st.plotly_chart(fig, use_container_width=True)
+
+        with col2:
+            st.markdown("#### Retenção (últimos 6 meses)")
+            meses = ["Mai","Jun","Jul","Ago","Set","Out"]
+            retencao = [91, 88, 93, 89, 92, 96]
+            fig2 = go.Figure()
+            fig2.add_scatter(x=meses, y=retencao, mode="lines+markers",
+                           line=dict(color="#1D9E75", width=2.5), marker=dict(size=7))
+            fig2.add_hline(y=90, line_dash="dot", line_color="#534AB7", annotation_text="Meta 90%")
+            fig2.update_layout(height=250, margin=dict(t=10,b=10,l=10,r=10),
+                             plot_bgcolor="#0d0d0d", paper_bgcolor="#0d0d0d",
+                             yaxis=dict(range=[80,100], color="#444", gridcolor="#1a1a1a"),
+                             xaxis=dict(color="#444"))
+            st.plotly_chart(fig2, use_container_width=True)
+
+        st.markdown("#### Alertas de retenção")
+        alertas = [
+            {"nome":"Carlos Mendes","ultimo":"há 12 dias","risco":"Alto","turma":"19:00"},
+            {"nome":"Ana Paula S.","ultimo":"há 8 dias","risco":"Médio","turma":"07:00"},
+            {"nome":"Ricardo Lima","ultimo":"há 6 dias","risco":"Médio","turma":"18:00"},
+        ]
+        for a in alertas:
+            cor = "#D85A30" if a["risco"]=="Alto" else "#BA7517"
+            st.markdown(f"""
+            <div class="card" style="border-left:3px solid {cor}">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div><div style="font-size:13px;font-weight:600;color:#fafaf8">{a['nome']}</div>
+                    <div style="font-size:11px;color:#888">Último treino: {a['ultimo']} · Turma das {a['turma']}</div></div>
+                    <div style="font-size:12px;font-weight:600;color:{cor}">Risco {a['risco']}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    elif section == "Alunos":
+        st.markdown("## 👥 Gestão de Alunos")
+        alunos_data = pd.DataFrame({
+            "Nome": ["Rafael Santos","Camila Freitas","André Melo","Julia Costa","Pedro Alves","Marina Lima","Lucas F.","Beatriz R."],
+            "Turma": ["19:00","07:00","06:00","18:00","20:00","07:00","19:00","18:00"],
+            "Plano": ["Premium","Premium","Lite","Premium","Lite","Premium","Premium","Lite"],
+            "Check-ins/mês": [14,18,12,8,6,20,15,9],
+            "Último treino": ["Hoje","Hoje","Ontem","Há 3 dias","Há 5 dias","Hoje","Ontem","Há 2 dias"],
+            "Risco churn": ["Baixo","Baixo","Baixo","Médio","Alto","Baixo","Baixo","Médio"],
         })
-        st.dataframe(df_prem.set_index("Premissa"), use_container_width=True)
+        st.dataframe(alunos_data, use_container_width=True, hide_index=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("📧 Enviar lembrete para inativos", use_container_width=True):
+                st.success("✅ Mensagem enviada para 2 alunos!")
+        with col2:
+            if st.button("➕ Adicionar aluno", use_container_width=True, type="primary"):
+                st.info("Formulário de cadastro em breve!")
+
+    elif section == "Financeiro":
+        st.markdown("## 💰 Financeiro")
+        meses = ["Mai","Jun","Jul","Ago","Set","Out"]
+        receita = [22400,23800,24100,25600,26800,28200]
+        fig = go.Figure()
+        fig.add_bar(x=meses, y=receita, marker_color="#534AB7", opacity=0.85)
+        fig.update_layout(height=280, margin=dict(t=10,b=10,l=10,r=10),
+                        plot_bgcolor="#0d0d0d", paper_bgcolor="#0d0d0d",
+                        xaxis=dict(color="#444"), yaxis=dict(color="#444", gridcolor="#1a1a1a"))
+        st.plotly_chart(fig, use_container_width=True)
+        c1,c2,c3 = st.columns(3)
+        with c1: st.markdown("<div class='stat-box'><div class='stat-num'>R$ 28k</div><div class='stat-lbl'>Receita outubro</div><div class='stat-sub'>↑ 5.2% vs set</div></div>", unsafe_allow_html=True)
+        with c2: st.markdown("<div class='stat-box'><div class='stat-num'>R$ 312</div><div class='stat-lbl'>Ticket médio</div><div class='stat-sub'>por aluno/mês</div></div>", unsafe_allow_html=True)
+        with c3: st.markdown("<div class='stat-box'><div class='stat-num'>R$ 1.8k</div><div class='stat-lbl'>Inadimplência</div><div class='stat-sub'>6 alunos em atraso</div></div>", unsafe_allow_html=True)
+
+    else:
+        st.markdown(f"## {nav}")
+        st.info("Módulo em desenvolvimento — disponível na próxima versão.")
