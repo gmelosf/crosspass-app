@@ -304,45 +304,30 @@ elif st.session_state.page == "dashboard":
     user = st.session_state.user or {"name":"Rafael Santos","city":"SP","plan":"Pro","tipo":"atleta","box":"CrossFit Itaim"}
     first = user["name"].split()[0]
 
-    # ── Top nav bar ──
-    if "nav_section" not in st.session_state:
-        st.session_state.nav_section = "Dashboard"
-
-    NAV_ITEMS = [
-        ("🏠","Dashboard"),("📊","Performance"),("🏋️","WOD Log"),
-        ("👨‍🏫","Coaches"),("🏆","Ranking"),("🛍️","Loja"),("⚙️","Config"),
-    ]
-
+    # ── Top bar ──
     coins_now = st.session_state.coins
-    btns_html = "".join([
-        f'<span class="topbar-btn {"active" if st.session_state.nav_section==label else ""}" onclick="void(0)">{icon} {label}</span>'
-        for icon,label in NAV_ITEMS
-    ])
-    st.markdown(f'''
-    <div class="topbar">
-        <div class="topbar-logo">⚡ CrossPass</div>
-        <div class="topbar-nav" id="topnav"></div>
-        <div class="topbar-coins">🪙 <span class="topbar-coin-val">{coins_now:,}</span><span style="font-size:10px;color:#888">moedas</span></div>
-        <div style="font-size:12px;color:#888;white-space:nowrap">👤 {first}</div>
-    </div>
-    ''', unsafe_allow_html=True)
-
-    # Use selectbox hidden-label as nav (reliable in Streamlit)
-    nav_labels = [f"{icon} {label}" for icon,label in NAV_ITEMS]
-    nav_choice = st.selectbox("Navegação", nav_labels,
-        index=[label for _,label in NAV_ITEMS].index(st.session_state.nav_section),
-        label_visibility="visible", key="topnav_select")
-    st.session_state.nav_section = nav_choice.split(" ",1)[1] if " " in nav_choice else nav_choice
-    section = st.session_state.nav_section
-
-    col_sair = st.columns([8,1])[1]
+    col_logo, col_coins, col_user, col_sair = st.columns([3, 2, 2, 1])
+    with col_logo:
+        st.markdown(f'''<div style="font-family:'Bebas Neue',display;font-size:26px;color:#534AB7;padding-top:6px;letter-spacing:.05em">⚡ CROSSPASS</div>''', unsafe_allow_html=True)
+    with col_coins:
+        st.markdown(f'''<div style="background:#1a1200;border:1px solid #3a2f00;border-radius:100px;padding:6px 16px;text-align:center;margin-top:4px"><span style="font-size:16px">🪙</span> <span style="font-family:'Bebas Neue';font-size:20px;color:#f59e0b">{coins_now:,}</span> <span style="font-size:10px;color:#666">moedas</span></div>''', unsafe_allow_html=True)
+    with col_user:
+        st.markdown(f'''<div style="font-size:13px;color:#888;padding-top:10px;text-align:right">👤 {first} · {user.get("plan","Free")}</div>''', unsafe_allow_html=True)
     with col_sair:
         if st.button("Sair", use_container_width=True):
             go("landing")
+
     st.markdown("---")
 
-    # ── DASHBOARD ──
-    if section == "Dashboard":
+    # ── Tabs nav ──
+    tab_home, tab_perf, tab_wod, tab_coaches, tab_rank, tab_loja, tab_cfg = st.tabs([
+        "🏠 Dashboard", "📊 Performance", "🏋️ WOD Log",
+        "👨‍🏫 Coaches", "🏆 Ranking", "🛍️ Loja", "⚙️ Config"
+    ])
+    section = "_tabs_"  # signal to use tabs below
+
+    with tab_home:
+     if True:
         st.markdown(f"## Olá, {first} 👋")
         st.caption(f"📍 {user.get('box','Sem box')} · ⚡ Plano {user.get('plan','Free')}")
 
@@ -432,8 +417,8 @@ elif st.session_state.page == "dashboard":
                 </div>
                 """, unsafe_allow_html=True)
 
-    # ── PERFORMANCE ──
-    elif section == "Performance":
+    with tab_perf:
+     if True:
         st.markdown("## 📊 Análise de Performance")
 
         tab1, tab2, tab3 = st.tabs(["PRs & Evolução", "Volume de Treino", "Comparação"])
@@ -514,8 +499,8 @@ elif st.session_state.page == "dashboard":
                 paper_bgcolor="#0d0d0d", legend=dict(font=dict(color="#888")))
             st.plotly_chart(fig, use_container_width=True)
 
-    # ── WOD LOG ──
-    elif section == "WOD Log":
+    with tab_wod:
+     if True:
         st.markdown("## 🏋️ Registrar Treino")
 
         with st.form("wod_log"):
@@ -561,8 +546,8 @@ elif st.session_state.page == "dashboard":
         else:
             st.info("Nenhum treino registrado ainda. Comece agora!")
 
-    # ── COACHES ──
-    elif section == "Coaches":
+    with tab_coaches:
+     if True:
         st.markdown("## 👨‍🏫 Coaches & Programas")
 
         tab1, tab2 = st.tabs(["Coaches 1:1", "Programas Online"])
@@ -631,8 +616,8 @@ elif st.session_state.page == "dashboard":
                     if st.button("Comprar", key=f"buy_{p['name']}", use_container_width=True, type="primary"):
                         st.success(f"✅ {p['name']} adicionado!")
 
-    # ── RANKING ──
-    elif section == "Ranking":
+    with tab_rank:
+     if True:
         st.markdown("## 🏆 Ranking & Comunidade")
 
         tab1, tab2 = st.tabs(["Ranking Geral", "Desafios"])
@@ -741,8 +726,8 @@ elif st.session_state.page == "dashboard":
                 <span style="color:#ccc">{label}</span><span style="color:#f59e0b;font-weight:600">{val}</span></div>""", unsafe_allow_html=True)
 
 
-    # ── LOJA ──
-    elif section == "Loja":
+    with tab_loja:
+     if True:
         st.markdown("## 🛍️ Loja CrossPass")
         st.markdown(f"""
         <div class="coins-bar">
@@ -820,8 +805,8 @@ elif st.session_state.page == "dashboard":
                 else:
                     st.button("Esgotado", key=f"buy_{p['id']}", use_container_width=True, disabled=True)
 
-    # ── SETTINGS ──
-    elif section == "Config":
+    with tab_cfg:
+     if True:
         user = st.session_state.user or {}
         st.markdown("## ⚙️ Configurações")
         c1, c2 = st.columns(2)
