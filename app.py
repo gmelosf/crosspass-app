@@ -868,18 +868,26 @@ elif st.session_state.page == "log_wod":
 elif st.session_state.page == "box_dashboard":
     user = st.session_state.user or {"name":"João","box":"CrossFit Demo","plan":"Growth","alunos":80}
 
-    with st.sidebar:
-        st.markdown(f"### 🏢 {user.get('box','Box')}")
-        st.caption(f"Plano {user.get('plan','Growth')}")
-        st.markdown("---")
-        nav = st.radio("", ["📊 Visão Geral","👥 Alunos","📅 Turmas","💰 Financeiro","📈 Retenção"], label_visibility="collapsed")
-        st.markdown("---")
-        if st.button("← Sair"):
+    # ── Box topbar ──
+    col_logo, col_info, col_sair = st.columns([4, 4, 1])
+    with col_logo:
+        st.markdown(f'''<div style="font-family:'Bebas Neue',display;font-size:24px;color:#534AB7;padding-top:6px">🏢 {user.get('box','Meu Box').upper()}</div>''', unsafe_allow_html=True)
+    with col_info:
+        alunos_tot = user.get("alunos", 80)
+        st.markdown(f'''<div style="font-size:12px;color:#888;padding-top:10px">Plano {user.get('plan','Growth')} · {user.get('city','SP')} · <span style="color:#1D9E75">{alunos_tot} alunos ativos</span></div>''', unsafe_allow_html=True)
+    with col_sair:
+        if st.button("Sair", use_container_width=True):
             go("landing")
 
-    section = nav.split(" ",1)[1]
+    st.markdown("---")
 
-    if section == "Visão Geral":
+    tab_vis, tab_alunos, tab_turmas, tab_fin, tab_ret, tab_wods, tab_crm = st.tabs([
+        "📊 Visão Geral", "👥 Alunos", "📅 Turmas",
+        "💰 Financeiro", "📈 Retenção", "🏋️ WODs", "📣 CRM"
+    ])
+
+    with tab_vis:
+     if True:
         st.markdown(f"## 🏢 {user.get('box','Meu Box')}")
         st.caption(f"Plano {user.get('plan','Growth')} · {user.get('city','SP')}")
 
@@ -934,7 +942,8 @@ elif st.session_state.page == "box_dashboard":
             </div>
             """, unsafe_allow_html=True)
 
-    elif section == "Alunos":
+    with tab_alunos:
+     if True:
         st.markdown("## 👥 Gestão de Alunos")
         alunos_data = pd.DataFrame({
             "Nome": ["Rafael Santos","Camila Freitas","André Melo","Julia Costa","Pedro Alves","Marina Lima","Lucas F.","Beatriz R."],
@@ -953,7 +962,8 @@ elif st.session_state.page == "box_dashboard":
             if st.button("➕ Adicionar aluno", use_container_width=True, type="primary"):
                 st.info("Formulário de cadastro em breve!")
 
-    elif section == "Financeiro":
+    with tab_fin:
+     if True:
         st.markdown("## 💰 Financeiro")
         meses = ["Mai","Jun","Jul","Ago","Set","Out"]
         receita = [22400,23800,24100,25600,26800,28200]
@@ -968,6 +978,131 @@ elif st.session_state.page == "box_dashboard":
         with c2: st.markdown("<div class='stat-box'><div class='stat-num'>R$ 312</div><div class='stat-lbl'>Ticket médio</div><div class='stat-sub'>por aluno/mês</div></div>", unsafe_allow_html=True)
         with c3: st.markdown("<div class='stat-box'><div class='stat-num'>R$ 1.8k</div><div class='stat-lbl'>Inadimplência</div><div class='stat-sub'>6 alunos em atraso</div></div>", unsafe_allow_html=True)
 
-    else:
-        st.markdown(f"## {nav}")
-        st.info("Módulo em desenvolvimento — disponível na próxima versão.")
+    with tab_turmas:
+     if True:
+        st.markdown("## 📅 Gestão de Turmas")
+        turmas_data = {
+            "06:00": {"alunos":8,"cap":12,"coach":"Marcos Alves","dias":"Seg a Sex"},
+            "07:00": {"alunos":12,"cap":14,"coach":"Renata Souza","dias":"Seg a Sex"},
+            "08:00": {"alunos":7,"cap":12,"coach":"Marcos Alves","dias":"Seg, Qua, Sex"},
+            "12:00": {"alunos":5,"cap":10,"coach":"João Pedro","dias":"Seg a Sex"},
+            "18:00": {"alunos":14,"cap":15,"coach":"Renata Souza","dias":"Seg a Sex"},
+            "19:00": {"alunos":15,"cap":15,"coach":"Marcos Alves","dias":"Seg a Sex"},
+            "20:00": {"alunos":11,"cap":12,"coach":"João Pedro","dias":"Seg a Sex"},
+        }
+        for hora, t in turmas_data.items():
+            pct = t["alunos"]/t["cap"]
+            cor = "#D85A30" if pct >= 0.95 else "#BA7517" if pct >= 0.80 else "#1D9E75"
+            st.markdown(f"""
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <div style="display:flex;gap:14px;align-items:center">
+                        <div style="font-family:'Bebas Neue';font-size:24px;color:#fafaf8">{hora}</div>
+                        <div><div style="font-size:12px;font-weight:600;color:#ccc">Coach: {t["coach"]}</div>
+                        <div style="font-size:11px;color:#888">{t["dias"]}</div></div>
+                    </div>
+                    <div style="text-align:right">
+                        <div style="font-family:'Bebas Neue';font-size:22px;color:{cor}">{t["alunos"]}/{t["cap"]}</div>
+                        <div style="font-size:10px;color:#888">ocupação {pct*100:.0f}%</div>
+                    </div>
+                </div>
+                <div style="height:5px;background:#1a1a1a;border-radius:100px;overflow:hidden">
+                    <div style="height:100%;width:{pct*100:.0f}%;background:{cor};border-radius:100px"></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        if st.button("➕ Nova turma", type="primary"):
+            st.info("Formulário em breve!")
+
+    with tab_ret:
+     if True:
+        st.markdown("## 📈 Análise de Retenção")
+        c1,c2,c3 = st.columns(3)
+        with c1: st.markdown("<div class='stat-box'><div class='stat-num'>95.8%</div><div class='stat-lbl'>Retenção mensal</div><div class='stat-sub'>↑ vs 94.2% anterior</div></div>", unsafe_allow_html=True)
+        with c2: st.markdown("<div class='stat-box'><div class='stat-num'>4.2%</div><div class='stat-lbl'>Churn mensal</div><div class='stat-sub'>↓ 0.8% melhora</div></div>", unsafe_allow_html=True)
+        with c3: st.markdown("<div class='stat-box'><div class='stat-num'>8.2 m</div><div class='stat-lbl'>Vida média do aluno</div><div class='stat-sub'>↑ vs 7.1m anterior</div></div>", unsafe_allow_html=True)
+        st.markdown("#### Alertas — alunos em risco de cancelamento")
+        alertas_ret = [
+            {"nome":"Carlos Mendes","ultimo":"há 12 dias","risco":"Alto","turma":"19:00","ci_mes":1},
+            {"nome":"Pedro Alves","ultimo":"há 8 dias","risco":"Alto","turma":"20:00","ci_mes":2},
+            {"nome":"Ana Paula S.","ultimo":"há 6 dias","risco":"Médio","turma":"07:00","ci_mes":4},
+            {"nome":"Ricardo Lima","ultimo":"há 5 dias","risco":"Médio","turma":"18:00","ci_mes":5},
+            {"nome":"Beatriz R.","ultimo":"há 4 dias","risco":"Baixo","turma":"18:00","ci_mes":6},
+        ]
+        for a in alertas_ret:
+            cor = "#D85A30" if a["risco"]=="Alto" else "#BA7517" if a["risco"]=="Médio" else "#1D9E75"
+            col1,col2 = st.columns([3,1])
+            with col1:
+                st.markdown(f"""
+                <div class="card" style="border-left:3px solid {cor}">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div><div style="font-size:13px;font-weight:600;color:#fafaf8">{a["nome"]}</div>
+                        <div style="font-size:11px;color:#888">Último treino: {a["ultimo"]} · Turma {a["turma"]} · {a["ci_mes"]} check-ins este mês</div></div>
+                        <div style="font-size:12px;font-weight:700;color:{cor}">Risco {a["risco"]}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col2:
+                if st.button("📧 Contatar", key=f"ret_{a['nome']}", use_container_width=True):
+                    st.success(f"Mensagem enviada para {a['nome'].split()[0]}!")
+
+    with tab_wods:
+     if True:
+        st.markdown("## 🏋️ Programação de WODs")
+        st.markdown("#### WOD de hoje")
+        st.markdown("""
+        <div class="wod-box">
+            <div class="wod-title">AMRAP 20</div>
+            <div style="font-size:13px;color:#ccc;margin-bottom:4px">• 5 Pull-ups</div>
+            <div style="font-size:13px;color:#ccc;margin-bottom:4px">• 10 Push-ups</div>
+            <div style="font-size:13px;color:#ccc;margin-bottom:4px">• 15 Air Squats</div>
+            <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #2a2060">
+                <div style="font-size:10px;color:#534AB7;font-weight:600;text-transform:uppercase;margin-bottom:4px">Scaling</div>
+                <div style="font-size:11px;color:#aaa">Ring Rows no lugar de Pull-ups para iniciantes</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown("#### Programar próximos WODs")
+        with st.form("wod_prog"):
+            c1,c2 = st.columns(2)
+            with c1:
+                data_wod = st.date_input("Data")
+                tipo_wod = st.selectbox("Tipo", ["AMRAP","For Time","EMOM","Força","Ginástica","Endurance"])
+            with c2:
+                desc_wod = st.text_area("Descrição do WOD", height=100, placeholder="5 rounds: 10 Deadlifts / 15 Box Jumps / 20 Wall Balls")
+                scaling = st.text_input("Scaling sugerido", placeholder="Reduzir carga / substituir movimento")
+            if st.form_submit_button("📌 Publicar WOD", use_container_width=True, type="primary"):
+                st.success(f"✅ WOD de {data_wod} publicado para os alunos!")
+
+    with tab_crm:
+     if True:
+        st.markdown("## 📣 CRM & Comunicação")
+        st.markdown("#### Enviar mensagem para alunos")
+        with st.form("crm_msg"):
+            segmento = st.multiselect("Segmento", ["Todos os alunos","Risco alto","Inativos (+7 dias)","Turma 19:00","Turma 07:00","Plano Premium","Plano Lite"], default=["Todos os alunos"])
+            canal = st.radio("Canal", ["📱 WhatsApp","📧 E-mail","🔔 Push no app"], horizontal=True)
+            mensagem = st.text_area("Mensagem", height=100, placeholder="Oi {nome}! Sentimos sua falta no treino. Que tal voltar amanhã? 💪")
+            if st.form_submit_button("📨 Enviar", use_container_width=True, type="primary"):
+                dest = 80 if "Todos" in str(segmento) else 5
+                st.success(f"✅ Mensagem enviada via {canal} para {dest} alunos!")
+        st.markdown("#### Automações ativas")
+        autos = [
+            {"nome":"Lembrete de inatividade","trigger":"Aluno sem treino há 5 dias","canal":"WhatsApp","status":True},
+            {"nome":"Parabéns no aniversário","trigger":"Dia do aniversário","canal":"Push + E-mail","status":True},
+            {"nome":"PR batido","trigger":"Atleta registra novo PR","canal":"Push","status":True},
+            {"nome":"Renovação de plano","trigger":"3 dias antes do vencimento","canal":"E-mail","status":False},
+        ]
+        for a in autos:
+            col1,col2 = st.columns([4,1])
+            with col1:
+                status_cor = "#1D9E75" if a["status"] else "#555"
+                st.markdown(f"""<div class="card"><div style="display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-size:13px;font-weight:600;color:#fafaf8">{a['nome']}</div>
+                <div style="font-size:11px;color:#888">{a['trigger']} · via {a['canal']}</div></div>
+                <div style="font-size:12px;font-weight:600;color:{status_cor}">{'✅ Ativa' if a['status'] else '⏸ Pausada'}</div>
+                </div></div>""", unsafe_allow_html=True)
+            with col2:
+                lbl = "Pausar" if a["status"] else "Ativar"
+                if st.button(lbl, key=f"auto_{a['nome']}", use_container_width=True):
+                    st.rerun()
+
