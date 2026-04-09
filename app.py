@@ -45,12 +45,25 @@ html,body,[class*="css"]{font-family:'DM Sans',sans-serif}
 .wod-box{background:linear-gradient(135deg,#1a1040,#0a0a18);border:1px solid #2a2060;border-radius:14px;padding:1.2rem 1.4rem;margin-bottom:1rem}
 .wod-title{font-family:'Bebas Neue';font-size:20px;color:#fafaf8;margin-bottom:.5rem}
 .streak-bar{background:linear-gradient(90deg,#3C3489,#534AB7);border-radius:10px;padding:1rem 1.4rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
+.coins-bar{background:linear-gradient(90deg,#1a1200,#2a1f00);border:1px solid #3a2f00;border-radius:12px;padding:.7rem 1.2rem;display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.coin-val{font-family:'Bebas Neue';font-size:28px;color:#f59e0b;line-height:1}
+.product-card{background:#111;border:1px solid #222;border-radius:16px;overflow:hidden;margin-bottom:.75rem;transition:.15s}
+.product-card:hover{border-color:#534AB7}
+.product-img{width:100%;height:160px;display:flex;align-items:center;justify-content:center;font-size:56px}
+.product-body{padding:1rem}
+.product-name{font-size:14px;font-weight:600;color:#fafaf8;margin-bottom:3px}
+.product-brand{font-size:11px;color:#888;margin-bottom:8px}
+.product-price{font-family:'Bebas Neue';font-size:20px;color:#534AB7}
+.product-coins{font-size:12px;color:#f59e0b;font-weight:600}
+.coin-badge{display:inline-flex;align-items:center;gap:4px;background:#2a1f00;border:1px solid #3a2f00;color:#f59e0b;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600}
 </style>
 """, unsafe_allow_html=True)
 
 # ── State ─────────────────────────────────────────────────────────────────────
 DEFAULTS = {
     "page": "landing", "user": None, "checkins": 14,
+    "coins": 850, "cart": [], "purchases": [],
+    "challenge_progress": {"Outubro de Força": 14, "PR Challenge": 4, "Box Hopper": 3},
     "log_entries": [], "prs": {
         "Fran": {"val": "4:32", "prev": "5:10", "date": "3 dias atrás", "unit": "tempo"},
         "Clean & Jerk": {"val": "95", "prev": "90", "date": "1 semana atrás", "unit": "kg"},
@@ -90,6 +103,21 @@ PROGRAMS = [
     {"name":"CrossFit do Zero","coach":"Fernanda Costa","price":97,"duration":"4 semanas","level":"Iniciante","description":"Programa de fundamentos para quem está começando. Aprenda os movimentos base com segurança e progressão.","tags":["Iniciante","Fundamentos"]},
     {"name":"Open Prep 2025","coach":"Marcos Alves","price":297,"duration":"12 semanas","level":"Avançado","description":"Preparação completa para o CrossFit Open. Programação dupla diária, simulados e análise de performance.","tags":["Competição","Avançado"]},
     {"name":"Mobilidade Diária","coach":"Patrícia Nunes","price":67,"duration":"Permanente","level":"Todos","description":"Protocolo diário de mobilidade e aquecimento. 15-20 min por dia para mover melhor e se lesionar menos.","tags":["Mobilidade","Prevenção"]},
+]
+
+PRODUCTS = [
+    {"id":1,"cat":"Suplementos","name":"Whey Protein Isolado","brand":"Optimum Nutrition","emoji":"🥤","bg":"#1a2040","price_brl":189,"price_coins":1800,"stock":True,"desc":"2kg de whey isolado com 27g de proteína por dose. Sabor baunilha ou chocolate.","tags":["Proteína","Recuperação"]},
+    {"id":2,"cat":"Suplementos","name":"Creatina Monohidratada","brand":"Growth Supplements","emoji":"⚡","bg":"#1a1040","price_brl":89,"price_coins":850,"stock":True,"desc":"300g de creatina pura. Aumento de força e potência nos treinos de alta intensidade.","tags":["Força","Performance"]},
+    {"id":3,"cat":"Suplementos","name":"Pré-Treino ENERGY","brand":"Probiótica","emoji":"🔥","bg":"#2a1000","price_brl":129,"price_coins":1200,"stock":True,"desc":"Fórmula com cafeína, beta-alanina e citrulina. Foco e energia máxima para o WOD.","tags":["Energia","Foco"]},
+    {"id":4,"cat":"Suplementos","name":"BCAA 2:1:1","brand":"Integral Médica","emoji":"💊","bg":"#0a2a1a","price_brl":79,"price_coins":750,"stock":True,"desc":"Aminoácidos essenciais para recuperação muscular. 60 doses por embalagem.","tags":["Recuperação","Músculo"]},
+    {"id":5,"cat":"Roupas","name":"Shorts CrossFit Pro","brand":"CrossPass Wear","emoji":"🩳","bg":"#1a0a2a","price_brl":149,"price_coins":1400,"stock":True,"desc":"Shorts de compressão com tecnologia anti-odor. Ideal para WODs de alta intensidade. Tamanhos P ao GG.","tags":["Exclusivo","Performance"]},
+    {"id":6,"cat":"Roupas","name":"Camiseta Dry-Fit","brand":"CrossPass Wear","emoji":"👕","bg":"#0a1a2a","price_brl":89,"price_coins":850,"stock":True,"desc":"Camiseta de treino com tecido respirável. Estampa CrossPass exclusiva. Unissex.","tags":["Exclusivo","Conforto"]},
+    {"id":7,"cat":"Roupas","name":"Legging Compressão","brand":"CrossPass Wear","emoji":"🩱","bg":"#2a0a1a","price_brl":179,"price_coins":1700,"stock":False,"desc":"Legging de compressão feminina com bolso lateral. Tecido 4-way stretch.","tags":["Exclusivo","Feminino"]},
+    {"id":8,"cat":"Roupas","name":"Meia Cano Alto","brand":"CrossPass Wear","emoji":"🧦","bg":"#1a1a0a","price_brl":49,"price_coins":450,"stock":True,"desc":"Pack com 3 meias cano alto para treino. Proteção contra o barbell.","tags":["Exclusivo","Proteção"]},
+    {"id":9,"cat":"Equipamentos","name":"Jump Rope Speed Rope","brand":"RPM Speed","emoji":"🪢","bg":"#0a2a2a","price_brl":229,"price_coins":2200,"stock":True,"desc":"Corda de pular de alta velocidade. Cabo de aço com rolamento de precisão. Ideal para double-unders.","tags":["Ginástica","Velocidade"]},
+    {"id":10,"cat":"Equipamentos","name":"Munhequeira WOD","brand":"RX Smart Gear","emoji":"🤸","bg":"#2a2a0a","price_brl":119,"price_coins":1100,"stock":True,"desc":"Munhequeira de couro para gymnastics e barbell. Proteção sem perder grip.","tags":["Proteção","Grip"]},
+    {"id":11,"cat":"Equipamentos","name":"Knee Sleeves 7mm","brand":"SBD","emoji":"🦵","bg":"#1a0a0a","price_brl":289,"price_coins":2700,"stock":True,"desc":"Par de knee sleeves premium 7mm. Suporte e compressão para squats pesados.","tags":["Força","Proteção"]},
+    {"id":12,"cat":"Equipamentos","name":"Chalk Magnésio 250g","brand":"Black Bear","emoji":"🤲","bg":"#1a1a1a","price_brl":39,"price_coins":370,"stock":True,"desc":"Magnésio em pó para grip em barbell, pull-ups e gymnastics. 250g.","tags":["Grip","Essential"]},
 ]
 
 WOD_TODAY = {
@@ -271,7 +299,9 @@ elif st.session_state.page == "dashboard":
         st.markdown(f"### ⚡ {first}")
         st.caption(f"📍 {user.get('city','')} · {user.get('plan','Free')}")
         st.markdown("---")
-        nav = st.radio("", ["🏠 Dashboard","📊 Performance","🏋️ WOD Log","👨‍🏫 Coaches","🏆 Ranking","⚙️ Configurações"], label_visibility="collapsed")
+        coins = st.session_state.coins
+        st.markdown(f'''<div style="background:#1a1200;border:1px solid #3a2f00;border-radius:10px;padding:.5rem .9rem;margin-bottom:.5rem;text-align:center"><span style="font-size:18px">🪙</span> <span style="font-family:Bebas Neue,display;font-size:22px;color:#f59e0b">{coins:,}</span> <span style="font-size:10px;color:#888"> moedas</span></div>''', unsafe_allow_html=True)
+        nav = st.radio("", ["🏠 Dashboard","📊 Performance","🏋️ WOD Log","👨‍🏫 Coaches","🏆 Ranking","🛍️ Loja","⚙️ Configurações"], label_visibility="collapsed")
         st.markdown("---")
         if st.button("← Sair", use_container_width=True):
             go("landing")
@@ -286,13 +316,13 @@ elif st.session_state.page == "dashboard":
         st.markdown(f"""
         <div class="streak-bar">
             <div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:3px">Sequência atual</div>
-            <div style="font-family:'Bebas Neue';font-size:36px;color:white">🔥 14 dias</div></div>
+            <div style="font-family:'Bebas Neue';font-size:32px;color:white">🔥 14 dias</div></div>
+            <div style="text-align:center"><div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:3px">Moedas</div>
+            <div style="font-family:'Bebas Neue';font-size:32px;color:#f59e0b">🪙 {st.session_state.coins:,}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.6)">crosscoins</div></div>
             <div style="text-align:right"><div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:3px">Este mês</div>
-            <div style="font-family:'Bebas Neue';font-size:36px;color:white">{st.session_state.checkins}</div>
+            <div style="font-family:'Bebas Neue';font-size:32px;color:white">{st.session_state.checkins}</div>
             <div style="font-size:10px;color:rgba(255,255,255,.6)">treinos</div></div>
-            <div style="text-align:right"><div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:3px">Ranking SP</div>
-            <div style="font-family:'Bebas Neue';font-size:36px;color:white">#38</div>
-            <div style="font-size:10px;color:rgba(255,255,255,.6)">de 2.847</div></div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -610,29 +640,152 @@ elif st.session_state.page == "dashboard":
 
         with tab2:
             st.markdown("#### Desafios ativos")
+            st.caption("🪙 Ganhe CrossCoins ao completar desafios — use na loja!")
             challenges = [
-                {"name":"Outubro de Força","desc":"Complete 20 treinos de força em outubro","progress":14,"total":20,"reward":"Badge + 500pts","ends":"15 dias"},
-                {"name":"PR Challenge","desc":"Bata 5 PRs em qualquer movimento este mês","progress":4,"total":5,"reward":"1 mês de Coach grátis","ends":"8 dias"},
-                {"name":"Box Hopper","desc":"Treine em 4 boxes diferentes este mês","progress":3,"total":4,"reward":"Badge especial","ends":"22 dias"},
+                {"key":"Outubro de Força","name":"Outubro de Força","desc":"Complete 20 treinos de força em outubro","total":20,"coins":500,"coins_top":1500,"ends":"15 dias","icon":"💪"},
+                {"key":"PR Challenge","name":"PR Challenge","desc":"Bata 5 PRs em qualquer movimento este mês","total":5,"coins":300,"coins_top":1000,"ends":"8 dias","icon":"🏆"},
+                {"key":"Box Hopper","name":"Box Hopper","desc":"Treine em 4 boxes diferentes este mês","total":4,"coins":200,"coins_top":700,"ends":"22 dias","icon":"🗺️"},
             ]
             for ch in challenges:
-                pct = ch["progress"]/ch["total"]
+                prog = st.session_state.challenge_progress.get(ch["key"], 0)
+                pct = min(prog / ch["total"], 1.0)
+                done = pct >= 1.0
+                col_ch, col_btn = st.columns([4,1])
+                with col_ch:
+                    st.markdown(f"""
+                    <div class="card" style="border-color:{'#1D9E75' if done else '#222'}">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+                            <div style="display:flex;gap:10px;align-items:flex-start">
+                                <span style="font-size:22px">{ch['icon']}</span>
+                                <div>
+                                    <div style="font-size:14px;font-weight:600;color:#fafaf8">{ch['name']} {'✅' if done else ''}</div>
+                                    <div style="font-size:11px;color:#888;margin-top:2px">{ch['desc']}</div>
+                                </div>
+                            </div>
+                            <div style="text-align:right;flex-shrink:0">
+                                <div style="font-size:10px;color:#888">Termina em</div>
+                                <div style="font-size:13px;font-weight:600;color:#D85A30">{ch['ends']}</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px">
+                            <span style="color:#888">Progresso: {prog}/{ch['total']}</span>
+                            <span style="color:#f59e0b;font-weight:600">🪙 {ch['coins']:,} ao completar · 🏆 {ch['coins_top']:,} se 1º lugar</span>
+                        </div>
+                        <div style="height:6px;background:#1a1a1a;border-radius:100px;overflow:hidden">
+                            <div style="height:100%;width:{pct*100:.0f}%;background:{'#1D9E75' if done else '#534AB7'};border-radius:100px;transition:.4s"></div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with col_btn:
+                    st.markdown("")
+                    st.markdown("")
+                    if not done:
+                        if st.button("+ Treino", key=f"ch_{ch['key']}", use_container_width=True):
+                            st.session_state.challenge_progress[ch["key"]] = prog + 1
+                            new_prog = prog + 1
+                            if new_prog >= ch["total"]:
+                                st.session_state.coins += ch["coins"]
+                                st.success(f"🎉 Desafio '{ch['name']}' completo! +{ch['coins']:,} 🪙")
+                            else:
+                                st.rerun()
+                    else:
+                        st.markdown('<div style="font-size:11px;color:#1D9E75;text-align:center;padding-top:.5rem">Completo! ✅</div>', unsafe_allow_html=True)
+
+            st.markdown("---")
+            st.markdown("#### 🪙 Como ganhar CrossCoins")
+            earning = [
+                ("✅ Completar treino","+ 50 moedas"),
+                ("🏆 Bater um PR","+ 120 moedas"),
+                ("🥇 1º lugar no desafio mensal","+ 1.500 moedas"),
+                ("🥈 2º lugar no desafio","+ 700 moedas"),
+                ("🥉 3º lugar no desafio","+ 400 moedas"),
+                ("🔥 Sequência de 30 dias","+ 500 moedas"),
+                ("🗺️ Visitar novo box","+ 100 moedas"),
+                ("⭐ Indicar um amigo","+ 200 moedas"),
+            ]
+            for label, val in earning:
+                st.markdown(f"""<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1a1a1a;font-size:13px">
+                <span style="color:#ccc">{label}</span><span style="color:#f59e0b;font-weight:600">{val}</span></div>""", unsafe_allow_html=True)
+
+
+    # ── LOJA ──
+    elif section == "Loja":
+        st.markdown("## 🛍️ Loja CrossPass")
+        st.markdown(f"""
+        <div class="coins-bar">
+            <span style="font-size:22px">🪙</span>
+            <div>
+                <div class="coin-val">{st.session_state.coins:,} CrossCoins</div>
+                <div style="font-size:10px;color:#888">Ganhe treinando, gaste na loja</div>
+            </div>
+            <div style="margin-left:auto;text-align:right">
+                <div style="font-size:11px;color:#888">Compras realizadas</div>
+                <div style="font-size:20px;font-weight:600;color:#f59e0b">{len(st.session_state.purchases)}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_search, col_cat = st.columns([2,1])
+        with col_search: q_loja = st.text_input("", placeholder="Buscar produto...", label_visibility="collapsed", key="loja_q")
+        with col_cat:
+            cat_filter = st.selectbox("", ["Todos","Suplementos","Roupas","Equipamentos"], label_visibility="collapsed", key="loja_cat")
+
+        pay_mode = st.radio("Forma de pagamento", ["💳 Pagar com R$", "🪙 Pagar com CrossCoins"], horizontal=True)
+
+        prods = PRODUCTS.copy()
+        if cat_filter != "Todos": prods = [p for p in prods if p["cat"] == cat_filter]
+        if q_loja: prods = [p for p in prods if q_loja.lower() in p["name"].lower() or q_loja.lower() in p["brand"].lower()]
+
+        if st.session_state.purchases:
+            with st.expander(f"📦 Seus pedidos ({len(st.session_state.purchases)})"):
+                for pur in st.session_state.purchases:
+                    st.markdown(f"✅ **{pur['name']}** — {pur['paid']} — {pur['date']}")
+
+        cols_loja = st.columns(3)
+        for i, p in enumerate(prods):
+            with cols_loja[i % 3]:
+                tags_html = " ".join([f'<span class="badge badge-purple">{t}</span>' for t in p["tags"]])
+                out_badge = '' if p["stock"] else '<span class="badge badge-coral">Esgotado</span>'
+                price_display = f"R$ {p['price_brl']}" if "R$" in pay_mode else f"🪙 {p['price_coins']:,}"
+                can_afford = (p["price_brl"] > 0) if "R$" in pay_mode else (st.session_state.coins >= p["price_coins"])
                 st.markdown(f"""
-                <div class="card">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-                        <div><div style="font-size:14px;font-weight:600;color:#fafaf8">{ch['name']}</div>
-                        <div style="font-size:11px;color:#888;margin-top:2px">{ch['desc']}</div></div>
-                        <div style="text-align:right"><div style="font-size:10px;color:#888">Termina em</div><div style="font-size:13px;font-weight:600;color:#D85A30">{ch['ends']}</div></div>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:4px">
-                        <span>Progresso: {ch['progress']}/{ch['total']}</span>
-                        <span>🎁 {ch['reward']}</span>
-                    </div>
-                    <div style="height:6px;background:#1a1a1a;border-radius:100px;overflow:hidden">
-                        <div style="height:100%;width:{pct*100:.0f}%;background:{'#1D9E75' if pct >= 1 else '#534AB7'};border-radius:100px"></div>
+                <div class="product-card">
+                    <div class="product-img" style="background:linear-gradient(135deg,{p['bg']},#050505)">{p['emoji']}</div>
+                    <div class="product-body">
+                        <div class="product-name">{p['name']}</div>
+                        <div class="product-brand">{p['brand']} {out_badge}</div>
+                        <div style="font-size:11px;color:#888;margin-bottom:8px;line-height:1.5">{p['desc'][:80]}...</div>
+                        <div>{tags_html}</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.75rem">
+                            <div>
+                                <div class="product-price">{"R$ "+str(p['price_brl']) if "R$" in pay_mode else ""}</div>
+                                <div class="product-coins">🪙 {p['price_coins']:,} moedas</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
+                if p["stock"]:
+                    btn_label = f"Comprar — {'R$ '+str(p['price_brl']) if 'R$' in pay_mode else '🪙 '+str(p['price_coins'])}"
+                    disabled = not can_afford
+                    if st.button(btn_label, key=f"buy_{p['id']}", use_container_width=True,
+                                 type="primary", disabled=disabled):
+                        if "Coins" in pay_mode:
+                            st.session_state.coins -= p["price_coins"]
+                            paid_str = f"🪙 {p['price_coins']:,} moedas"
+                        else:
+                            paid_str = f"R$ {p['price_brl']}"
+                        st.session_state.purchases.insert(0, {
+                            "name": p["name"], "paid": paid_str,
+                            "date": datetime.now().strftime("%d/%m %H:%M")
+                        })
+                        st.success(f"✅ {p['name']} comprado!")
+                        st.rerun()
+                    if not can_afford and "Coins" in pay_mode:
+                        falta = p["price_coins"] - st.session_state.coins
+                        st.caption(f"Faltam 🪙 {falta:,} moedas")
+                else:
+                    st.button("Esgotado", key=f"buy_{p['id']}", use_container_width=True, disabled=True)
 
     # ── SETTINGS ──
     elif section == "Configurações":
