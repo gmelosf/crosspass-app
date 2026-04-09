@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.graph_objects as go
+import plotly.graph_objects as gobj
 import plotly.express as px
 from datetime import datetime, timedelta
 import random
@@ -313,7 +313,7 @@ elif st.session_state.page == "dashboard":
         with col1:
             st.markdown("#### Evolução de Performance (90 dias)")
             df = gen_performance_data()
-            fig = go.Figure()
+            fig = gobj.Figure()
             fig.add_scatter(x=df["date"], y=df["score"], mode="lines",
                           line=dict(color="#534AB7", width=2.5),
                           fill="tozeroy", fillcolor="rgba(83,74,183,0.08)")
@@ -419,7 +419,7 @@ elif st.session_state.page == "dashboard":
         with tab2:
             st.markdown("#### Volume por semana (últimas 12 semanas)")
             df_vol = gen_volume_data()
-            fig = go.Figure()
+            fig = gobj.Figure()
             for col, color in [("Força","#534AB7"),("Metcon","#1D9E75"),("Ginástica","#D85A30")]:
                 fig.add_bar(name=col, x=df_vol["Semana"], y=df_vol[col], marker_color=color, opacity=0.85)
             fig.update_layout(barmode="stack", height=300, margin=dict(t=10,b=10,l=10,r=10),
@@ -439,7 +439,7 @@ elif st.session_state.page == "dashboard":
             user_vals  = [78, 65, 82, 71, 90]
             avg_vals   = [65, 60, 68, 63, 72]
 
-            fig = go.Figure()
+            fig = gobj.Figure()
             fig.add_scatterpolar(r=user_vals+[user_vals[0]], theta=categories+[categories[0]],
                 fill='toself', name='Você', line_color='#534AB7', fillcolor='rgba(83,74,183,0.2)')
             fig.add_scatterpolar(r=avg_vals+[avg_vals[0]], theta=categories+[categories[0]],
@@ -735,7 +735,7 @@ elif st.session_state.page == "box_dashboard":
             st.markdown("#### Retenção (últimos 6 meses)")
             meses = ["Mai","Jun","Jul","Ago","Set","Out"]
             retencao = [91, 88, 93, 89, 92, 96]
-            fig2 = go.Figure()
+            fig2 = gobj.Figure()
             fig2.add_scatter(x=meses, y=retencao, mode="lines+markers",
                            line=dict(color="#1D9E75", width=2.5), marker=dict(size=7))
             fig2.add_hline(y=90, line_dash="dot", line_color="#534AB7", annotation_text="Meta 90%")
@@ -786,7 +786,7 @@ elif st.session_state.page == "box_dashboard":
         st.markdown("## 💰 Financeiro")
         meses = ["Mai","Jun","Jul","Ago","Set","Out"]
         receita = [22400,23800,24100,25600,26800,28200]
-        fig = go.Figure()
+        fig = gobj.Figure()
         fig.add_bar(x=meses, y=receita, marker_color="#534AB7", opacity=0.85)
         fig.update_layout(height=280, margin=dict(t=10,b=10,l=10,r=10),
                         plot_bgcolor="#0d0d0d", paper_bgcolor="#0d0d0d",
