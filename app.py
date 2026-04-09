@@ -45,6 +45,16 @@ html,body,[class*="css"]{font-family:'DM Sans',sans-serif}
 .wod-box{background:linear-gradient(135deg,#1a1040,#0a0a18);border:1px solid #2a2060;border-radius:14px;padding:1.2rem 1.4rem;margin-bottom:1rem}
 .wod-title{font-family:'Bebas Neue';font-size:20px;color:#fafaf8;margin-bottom:.5rem}
 .streak-bar{background:linear-gradient(90deg,#3C3489,#534AB7);border-radius:10px;padding:1rem 1.4rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
+.topbar{position:sticky;top:0;z-index:999;background:#0a0a0a;border-bottom:1px solid #1a1a1a;padding:.5rem 1.5rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;gap:1rem}
+.topbar-logo{font-family:'Bebas Neue';font-size:22px;color:#534AB7;letter-spacing:.05em;white-space:nowrap}
+.topbar-nav{display:flex;gap:4px;overflow-x:auto;flex:1;justify-content:center}
+.topbar-btn{background:none;border:none;color:#666;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s;font-family:'DM Sans',sans-serif;letter-spacing:.02em}
+.topbar-btn:hover{background:#1a1a1a;color:#fafaf8}
+.topbar-btn.active{background:#534AB7;color:white}
+.topbar-coins{display:flex;align-items:center;gap:6px;background:#1a1200;border:1px solid #3a2f00;border-radius:100px;padding:5px 14px;white-space:nowrap;flex-shrink:0}
+.topbar-coin-val{font-family:'Bebas Neue';font-size:18px;color:#f59e0b;line-height:1}
+section[data-testid="stSidebar"]{display:none}
+
 .coins-bar{background:linear-gradient(90deg,#1a1200,#2a1f00);border:1px solid #3a2f00;border-radius:12px;padding:.7rem 1.2rem;display:flex;align-items:center;gap:10px;margin-bottom:1rem}
 .coin-val{font-family:'Bebas Neue';font-size:28px;color:#f59e0b;line-height:1}
 .product-card{background:#111;border:1px solid #222;border-radius:16px;overflow:hidden;margin-bottom:.75rem;transition:.15s}
@@ -294,19 +304,42 @@ elif st.session_state.page == "dashboard":
     user = st.session_state.user or {"name":"Rafael Santos","city":"SP","plan":"Pro","tipo":"atleta","box":"CrossFit Itaim"}
     first = user["name"].split()[0]
 
-    # Sidebar nav
-    with st.sidebar:
-        st.markdown(f"### ⚡ {first}")
-        st.caption(f"📍 {user.get('city','')} · {user.get('plan','Free')}")
-        st.markdown("---")
-        coins = st.session_state.coins
-        st.markdown(f'''<div style="background:#1a1200;border:1px solid #3a2f00;border-radius:10px;padding:.5rem .9rem;margin-bottom:.5rem;text-align:center"><span style="font-size:18px">🪙</span> <span style="font-family:Bebas Neue,display;font-size:22px;color:#f59e0b">{coins:,}</span> <span style="font-size:10px;color:#888"> moedas</span></div>''', unsafe_allow_html=True)
-        nav = st.radio("", ["🏠 Dashboard","📊 Performance","🏋️ WOD Log","👨‍🏫 Coaches","🏆 Ranking","🛍️ Loja","⚙️ Configurações"], label_visibility="collapsed")
-        st.markdown("---")
-        if st.button("← Sair", use_container_width=True):
-            go("landing")
+    # ── Top nav bar ──
+    if "nav_section" not in st.session_state:
+        st.session_state.nav_section = "Dashboard"
 
-    section = nav.split(" ",1)[1] if " " in nav else nav
+    NAV_ITEMS = [
+        ("🏠","Dashboard"),("📊","Performance"),("🏋️","WOD Log"),
+        ("👨‍🏫","Coaches"),("🏆","Ranking"),("🛍️","Loja"),("⚙️","Config"),
+    ]
+
+    coins_now = st.session_state.coins
+    btns_html = "".join([
+        f'<span class="topbar-btn {"active" if st.session_state.nav_section==label else ""}" onclick="void(0)">{icon} {label}</span>'
+        for icon,label in NAV_ITEMS
+    ])
+    st.markdown(f'''
+    <div class="topbar">
+        <div class="topbar-logo">⚡ CrossPass</div>
+        <div class="topbar-nav" id="topnav"></div>
+        <div class="topbar-coins">🪙 <span class="topbar-coin-val">{coins_now:,}</span><span style="font-size:10px;color:#888">moedas</span></div>
+        <div style="font-size:12px;color:#888;white-space:nowrap">👤 {first}</div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    # Use selectbox hidden-label as nav (reliable in Streamlit)
+    nav_labels = [f"{icon} {label}" for icon,label in NAV_ITEMS]
+    nav_choice = st.selectbox("Navegação", nav_labels,
+        index=[label for _,label in NAV_ITEMS].index(st.session_state.nav_section),
+        label_visibility="visible", key="topnav_select")
+    st.session_state.nav_section = nav_choice.split(" ",1)[1] if " " in nav_choice else nav_choice
+    section = st.session_state.nav_section
+
+    col_sair = st.columns([8,1])[1]
+    with col_sair:
+        if st.button("Sair", use_container_width=True):
+            go("landing")
+    st.markdown("---")
 
     # ── DASHBOARD ──
     if section == "Dashboard":
@@ -788,7 +821,7 @@ elif st.session_state.page == "dashboard":
                     st.button("Esgotado", key=f"buy_{p['id']}", use_container_width=True, disabled=True)
 
     # ── SETTINGS ──
-    elif section == "Configurações":
+    elif section == "Config":
         user = st.session_state.user or {}
         st.markdown("## ⚙️ Configurações")
         c1, c2 = st.columns(2)
